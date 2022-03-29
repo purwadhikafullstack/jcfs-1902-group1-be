@@ -90,5 +90,23 @@ module.exports = {
                 error
             })
         }
+    },
+    deleteProduct: async (req,res)=>{
+        try{
+            await dbQuery(`update product set idstatus = 2 where idproduct=${req.params.id};`)
+            res.status(200).send({
+                message : 'Delete Success',
+                success : true,
+            })
+
+        }
+        catch(error){
+            console.log('error delete product',error);
+            res.status(500).send({
+                message : 'Delete Error',
+                success : false,
+                error
+            })
+        }
     }
 }
