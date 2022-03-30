@@ -5,7 +5,14 @@ const {uploader} = require('../supports/uploader');
 module.exports = {
     getProduct: async (req,res)=>{
         try{
-            let getProduct = await dbQuery(`select p.* , i.url as url from product p join imageproduct i on p.idproduct = i.idproduct where idstatus = 1;`);
+            let filterQuery = [];
+            for(let prop in req.query){
+                filterQuery.push(
+                    `${prop == "nama" ? `p.${prop} like '%${req.query[prop]}%'` : `${prop}=${db.escape(req.query[prop])}`}`
+                );  
+            }
+            console.log('query', filterQuery)
+            let getProduct = await dbQuery(`select p.* , i.url as url from product p join imageproduct i on p.idproduct = i.idproduct where idstatus = 1 ${filterQuery.length>0? `and ${filterQuery.join(" and ")}`: ''};`);
             let getStock = await dbQuery(`select * from stock;`)
             getProduct.forEach(valPro=>{
                 valPro.stock = [];
@@ -16,6 +23,7 @@ module.exports = {
                     }
                 })
             })
+            console.log('query', getProduct)
             res.status(200).send({
                 success : true,
                 dataProduct : getProduct
