@@ -109,12 +109,12 @@ module.exports = {
             };
             console.log("results = ", results[0])
             if (results.length > 0) {
-                let { iduser, username, email, password, role, status } = results[0]
-                let token = createToken({ iduser, username, email, role, status })
+                let { iduser, username, email, password, idrole, idstatus } = results[0]
+                let token = createToken({ iduser, username, email, idrole, idstatus })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
-                    dataLogin: { username, email, role, status, token, password },
+                    dataLogin: { iduser, username, email, idrole, idstatus, token, password,  },
                     error: ""
                 })
             } else {
