@@ -1,5 +1,5 @@
 # Konfigurasi Continuos Deployment
-name : CD Attendance API
+name : CD PHARMA-GROUP1 API
 
 on : 
   push :
