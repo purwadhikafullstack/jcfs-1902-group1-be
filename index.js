@@ -16,6 +16,7 @@ app.use(bearerToken()); // untuk mengambil data token dari req.header client
 app.get("/", (req,res) => {
     res.status(200).send("<h2>FINAL PROJECT API</h2>")
 })
+
 // DB Check Connection
 db.getConnection((err, connection) => {
     if (err) {
@@ -26,7 +27,8 @@ db.getConnection((err, connection) => {
 
 // Routes API Setup
 
-const { usersRoute } = require('./routers');
+const { usersRoute, productRoute } = require('./routers');
 app.use('/users', usersRoute);
+app.use('/product',productRoute);
 
 app.listen(PORT, () => console.log("Your API RUNNING :", PORT));
