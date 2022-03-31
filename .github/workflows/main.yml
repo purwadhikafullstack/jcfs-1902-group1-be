@@ -1,5 +1,5 @@
 # Konfigurasi Continuos Deployment
-name : CD PHARMA-GROUP1 API
+name : CD JCFS1902-PHARMA-GROUP1 API
 
 on : 
   push :
