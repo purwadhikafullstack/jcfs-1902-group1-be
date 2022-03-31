@@ -1,0 +1,80 @@
+# Konfigurasi Continuos Deployment
+name : CD Attendance API
+
+on : 
+  push :
+    branches :
+      - develop
+      
+jobs :
+  cd:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Deploy Attendance API with github action
+        uses: appleboy/ssh-action@master
+        with:
+          host: 172.104.62.7
+          username: root
+          key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            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
+            -----END OPENSSH PRIVATE KEY-----
+          port: 22
+          script: |
+            cd JCFS_1902
+            cd jcfs-1902-group1-be
+            git checkout develop
+            git add .
+            git commit -m "PHAR-00-server : server update file at public"
+            git pull origin develop
+            npm install
+            pm2 restart pharma-group1-jcwd1902
