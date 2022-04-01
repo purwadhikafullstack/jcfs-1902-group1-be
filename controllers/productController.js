@@ -120,5 +120,36 @@ module.exports = {
                 error
             })
         }
+    },
+    editProduct : async (req,res)=>{
+        try{
+            const uploadFile = uploader('/images','IMGPR').array("images",5);
+            uploadFile(req,res,async(error)=>{
+                let {idcategory,stock,nama,harga,deskripsi,kemasan,url}=JSON.parse(req.body.data);
+                console.log('reqfile',req.files)
+                await dbQuery(`update product set idcategory = ${idcategory}, nama = '${nama}', harga=${harga}, deskripsi='${deskripsi}', kemasan='${kemasan}' where idproduct=${req.params.idproduct};`);
+                stock.forEach(async (val)=>{
+                    await dbQuery(`update ecommerce.stocks set satuan='${val.satuan}',qty=${val.qty} where idstocks=${val.idstocks};`);
+                });     
+                    if(req.files){
+                        req.files.forEach(async (val) => {
+                            await dbQuery(`update  imageproduct set url='http://localhost:2001/images/${val.filename}' where idproduct=${req.params.idproduct};`);
+                            });
+                        }else{
+                            await dbQuery(`update  imageproduct set url='${url}' where idproduct=${req.params.idproduct};`);
+                    }
+            res.status(200).send({
+                    message : 'Edit Product Success',
+                    error
+                })
+            })
+        }catch(error){
+            console.log('error edit product : ', error);
+            res.status(500).send({
+                message : 'error edit',
+                success : false,
+                error
+            })
+        }
     }
 }
