@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(bearerToken()); // untuk mengambil data token dari req.header client
 
-app.get("/", (req,res) => {
+app.get("/", (req, res) => {
     res.status(200).send("<h2>FINAL PROJECT API</h2>")
 })
 
