@@ -54,7 +54,7 @@ module.exports = {
                     if(insertProduct.insertId){
                         let inputStock = [];
                         req.files.forEach(async (val) => {
-                            await dbQuery(`insert into imageproduct values (null,${insertProduct.insertId},'http://localhost:2001/images/${val.filename}');`);
+                            await dbQuery(`insert into imageproduct values (null,${insertProduct.insertId},'http://172.104.62.7:2001/images/${val.filename}');`);
                         });
                         stock.forEach((val)=>{
                             inputStock.push(`(null,${insertProduct.insertId},'${val.satuan}',${val.qty});`)
@@ -133,7 +133,7 @@ module.exports = {
                 });     
                     if(req.files){
                         req.files.forEach(async (val) => {
-                            await dbQuery(`update  imageproduct set url='http://localhost:2001/images/${val.filename}' where idproduct=${req.params.idproduct};`);
+                            await dbQuery(`update  imageproduct set url='http://172.104.62.7:2001/images/${val.filename}' where idproduct=${req.params.idproduct};`);
                             });
                         }else{
                             await dbQuery(`update  imageproduct set url='${url}' where idproduct=${req.params.idproduct};`);
