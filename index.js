@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const https = require('https');
+const fs = require("fs");
 const dotenv = require('dotenv');
 const { db } = require('./supports/database');
 const bearerToken = require("express-bearer-token");
@@ -31,4 +33,8 @@ const { usersRoute, productRoute } = require('./routers');
 app.use('/users', usersRoute);
 app.use('/product',productRoute);
 
-app.listen(PORT, () => console.log("Your API RUNNING :", PORT));
+// app.listen(PORT, () => console.log("Your API RUNNING :", PORT));
+https.createServer({
+      key: fs.readFileSync('./ssl/server.key'),
+      cert: fs.readFileSync('./ssl/server.cert')
+  }, app).listen(PORT, () => console.log("Your API RUNNING :", PORT));
