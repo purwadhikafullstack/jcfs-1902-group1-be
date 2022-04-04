@@ -79,18 +79,17 @@ module.exports = {
             };
 
             if (results.length > 0) {
-                let { iduser, idrole, idstatus, email, username, password, phone, profile_image } = results[0]
+                let { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image } = results[0]
                 let token = createToken({ iduser, idrole, idstatus, email, username })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
-                    dataLogin: { iduser, idrole, idstatus, email, username, password, phone, profile_image, token }
+                    dataLogin: { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image, token }
                 })
             } else {
                 res.status(401).send({
                     success: false,
                     message: "Login Failed ❌",
-                    dataLogin: {},
                     error: ""
                 })
             }
@@ -109,12 +108,12 @@ module.exports = {
             };
             console.log("results = ", results[0])
             if (results.length > 0) {
-                let { iduser, username, email, password, idrole, idstatus } = results[0]
+                let { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image } = results[0]
                 let token = createToken({ iduser, username, email, idrole, idstatus })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
-                    dataLogin: { iduser, username, email, idrole, idstatus, token, password,  },
+                    dataLogin: { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image, token },
                     error: ""
                 })
             } else {
@@ -230,6 +229,29 @@ module.exports = {
                 success: false,
                 message: "Change Password Failed ❌",
                 err: ''
+            })
+        }
+    },
+    editProfile: async (req, res) => {
+        let { username, fullname, email, phone, address, gender, age, profile_image } = req.body
+        try {
+            let editProfile = await dbQuery(`UPDATE user SET 
+            username = "${username}",
+            fullname = "${fullname}",
+            email = "${email}",
+            phone = ${phone},
+            address = "${address}",
+            gender = "${gender}",
+            age = "${age}",
+            profile_image = "${profile_image}"
+            WHERE iduser = ${req.params.iduser};`)
+            res.status(200).send(editProfile)
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Failed ❌",
+                error: error
             })
         }
     }
