@@ -9,14 +9,14 @@ module.exports = {
             for(let prop in req.query){
                 if(prop != 'sort' && prop != 'order'){
                     filterQuery.push(
-                        `${prop == "nama" ? `p.${prop} like '%${req.query[prop]}%'` : `${prop}=${db.escape(req.query[prop])}`}`
+                        `${prop == "nama" || "idproduct" ? `p.${prop} like '%${req.query[prop]}%'` : `${prop}=${db.escape(req.query[prop])}`}`
                     );
                 }    
             }
             console.log('query', filterQuery)
             console.log('query', req.query.sort)
             let {sort, order} = req.query;
-            let getProduct = await dbQuery(`select p.* , i.url as url from product p join imageproduct i on p.idproduct = i.idproduct where idstatus = 1 ${filterQuery.length>0? `and ${filterQuery.join(" and ")}`: ''} ${sort&&order? `order by ${sort} ${order}`:''};`);
+            let getProduct = await dbQuery(`select p.* , i.url as url,c.category as category from product p join imageproduct i on p.idproduct = i.idproduct join category c on p.idcategory=c.idcategory where idstatus = 1 ${filterQuery.length>0? `and ${filterQuery.join(" and ")}`: ''} ${sort&&order? `order by ${sort} ${order}`:''};`);
             console.log('query',getProduct)
             let getStock = await dbQuery(`select * from stock;`)
             getProduct.forEach(valPro=>{
@@ -54,7 +54,7 @@ module.exports = {
                     if(insertProduct.insertId){
                         let inputStock = [];
                         req.files.forEach(async (val) => {
-                            await dbQuery(`insert into imageproduct values (null,${insertProduct.insertId},'http://localhost:2000/images/${val.filename}');`);
+                            await dbQuery(`insert into imageproduct values (null,${insertProduct.insertId},'http://172.104.62.7:2001/images/${val.filename}');`);
                         });
                         stock.forEach((val)=>{
                             inputStock.push(`(null,${insertProduct.insertId},'${val.satuan}',${val.qty});`)
@@ -116,6 +116,37 @@ module.exports = {
             console.log('error delete product',error);
             res.status(500).send({
                 message : 'Delete Error',
+                success : false,
+                error
+            })
+        }
+    },
+    editProduct : async (req,res)=>{
+        try{
+            const uploadFile = uploader('/images','IMGPR').array("images",5);
+            uploadFile(req,res,async(error)=>{
+                let {idcategory,stock,nama,harga,deskripsi,kemasan,url}=JSON.parse(req.body.data);
+                console.log('reqfile',req.files)
+                await dbQuery(`update product set idcategory = ${idcategory}, nama = '${nama}', harga=${harga}, deskripsi='${deskripsi}', kemasan='${kemasan}' where idproduct=${req.params.idproduct};`);
+                stock.forEach(async (val)=>{
+                    await dbQuery(`update ecommerce.stocks set satuan='${val.satuan}',qty=${val.qty} where idstocks=${val.idstocks};`);
+                });     
+                    if(req.files){
+                        req.files.forEach(async (val) => {
+                            await dbQuery(`update  imageproduct set url='http://172.104.62.7:2001/images/${val.filename}' where idproduct=${req.params.idproduct};`);
+                            });
+                        }else{
+                            await dbQuery(`update  imageproduct set url='${url}' where idproduct=${req.params.idproduct};`);
+                    }
+            res.status(200).send({
+                    message : 'Edit Product Success',
+                    error
+                })
+            })
+        }catch(error){
+            console.log('error edit product : ', error);
+            res.status(500).send({
+                message : 'error edit',
                 success : false,
                 error
             })
