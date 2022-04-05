@@ -1,6 +1,7 @@
 const { db, dbQuery } = require('../supports/database');
 const { hashPassword, createToken } = require('../supports/jwt');
 const { transporter } = require('../supports/nodemailer');
+const { uploader } = require('../supports/uploader');
 
 module.exports = {
     getData: (req, res, next) => {
@@ -233,19 +234,33 @@ module.exports = {
         }
     },
     editProfile: async (req, res) => {
-        let { username, fullname, email, phone, address, gender, age, profile_image } = req.body
         try {
-            let editProfile = await dbQuery(`UPDATE user SET 
-            username = "${username}",
-            fullname = "${fullname}",
-            email = "${email}",
-            phone = ${phone},
-            address = "${address}",
-            gender = "${gender}",
-            age = "${age}",
-            profile_image = "${profile_image}"
-            WHERE iduser = ${req.params.iduser};`)
-            res.status(200).send(editProfile)
+            const uploadFile = uploader("/imgUser", "IMGUSER").array("images", 1);
+            uploadFile(req, res, async (error) => {
+                console.log("file", req.files)
+                console.log("req.body", req.body.dataBaru)
+                let { username, fullname, email, phone, address, gender, age, url } = JSON.parse(req.body.dataBaru)
+                let editProfile = await dbQuery(`UPDATE user SET 
+                        username = ${db.escape(username)},
+                        fullname = ${db.escape(fullname)},
+                        email = ${db.escape(email)},
+                        phone = ${db.escape(phone)},
+                        address = ${db.escape(address)},
+                        gender = ${db.escape(gender)},
+                        age = ${db.escape(age)},
+                        profile_image = ${
+                            req.files[0] ?
+                            db.escape(`/imgUser/${req.files[0].filename}`)
+                            :
+                            db.escape(url)
+                        }
+                        WHERE iduser = ${req.params.iduser};`)
+                        console.log("editProfile = ", editProfile)
+                res.status(200).send({
+                    success: true,
+                    message: "edit success ✅"
+                })
+            })
         } catch (error) {
             console.log(error)
             res.status(500).send({
