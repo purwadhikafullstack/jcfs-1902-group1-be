@@ -44,37 +44,39 @@ module.exports = {
     },
     addProduct: async (req,res)=>{
         try{
-            const uploadFile = uploader('/images','IMGPR').array("images",5);
-            uploadFile(req,res,async(error)=>{
-                try{
-                    console.log("reqbody",req.body.data);
-                    console.log("reqfile", req.files);
-                    let {idcategory,stock,nama,harga,deskripsi,kemasan}=JSON.parse(req.body.data);
-                    let insertProduct = await dbQuery(`INSERT INTO product VALUES(null,${idcategory},1,'${nama}',${harga},'${deskripsi}','${kemasan}');`);
-                    if(insertProduct.insertId){
-                        let inputStock = [];
-                        req.files.forEach(async (val) => {
-                            await dbQuery(`insert into imageproduct values (null,${insertProduct.insertId},'http://172.104.62.7:2001/images/${val.filename}');`);
-                        });
-                        stock.forEach((val)=>{
-                            inputStock.push(`(null,${insertProduct.insertId},'${val.satuan}',${val.qty});`)
-                        });
-                        await dbQuery(`insert into stock values ${inputStock.join()};`);
+            if(req.dataUser.idrole == 1){
+                const uploadFile = uploader('/images','IMGPR').array("images",5);
+                uploadFile(req,res,async(error)=>{
+                    try{
+                        console.log("reqbody",req.body.data);
+                        console.log("reqfile", req.files);
+                        let {idcategory,stock,nama,harga,deskripsi,kemasan}=JSON.parse(req.body.data);
+                        let insertProduct = await dbQuery(`INSERT INTO product VALUES(null,${idcategory},1,'${nama}',${harga},'${deskripsi}','${kemasan}');`);
+                        if(insertProduct.insertId){
+                            let inputStock = [];
+                            req.files.forEach(async (val) => {
+                                await dbQuery(`insert into imageproduct values (null,${insertProduct.insertId},'/images/${val.filename}');`);
+                            });
+                            stock.forEach((val)=>{
+                                inputStock.push(`(null,${insertProduct.insertId},'${val.satuan}',${val.qty});`)
+                            });
+                            await dbQuery(`insert into stock values ${inputStock.join()};`);
+                        }
+                        res.status(200).send({
+                            success : true, 
+                            message:"Add Product Success"
+                        })
                     }
-                    res.status(200).send({
-                        success : true, 
-                        message:"Add Product Success"
-                    })
-                }
-                catch (error){
-                    console.log('add product error 1',error);
-                    res.status(500).send({
-                        success : false,
-                        message: 'failed',
-                        error
-                    })     
-                }
-            })
+                    catch (error){
+                        console.log('add product error 1',error);
+                        res.status(500).send({
+                            success : false,
+                            message: 'failed',
+                            error
+                        })     
+                    }
+                })
+            }
         }
         catch(error){
             console.log('add product error',error);
@@ -104,52 +106,56 @@ module.exports = {
         }
     },
     deleteProduct: async (req,res)=>{
-        try{
-            await dbQuery(`update product set idstatus = 2 where idproduct=${req.params.id};`)
-            res.status(200).send({
-                message : 'Delete Success',
-                success : true,
-            })
-
-        }
-        catch(error){
-            console.log('error delete product',error);
-            res.status(500).send({
-                message : 'Delete Error',
-                success : false,
-                error
-            })
+        if(req.dataUser.idrole == 1){
+            try{
+                await dbQuery(`update product set idstatus = 2 where idproduct=${req.params.id};`)
+                res.status(200).send({
+                    message : 'Delete Success',
+                    success : true,
+                })
+                
+            }
+            catch(error){
+                console.log('error delete product',error);
+                res.status(500).send({
+                    message : 'Delete Error',
+                    success : false,
+                    error
+                })
+            }
         }
     },
     editProduct : async (req,res)=>{
-        try{
-            const uploadFile = uploader('/images','IMGPR').array("images",5);
-            uploadFile(req,res,async(error)=>{
-                let {idcategory,stock,nama,harga,deskripsi,kemasan,url}=JSON.parse(req.body.data);
-                console.log('reqfile',req.files)
-                await dbQuery(`update product set idcategory = ${idcategory}, nama = '${nama}', harga=${harga}, deskripsi='${deskripsi}', kemasan='${kemasan}' where idproduct=${req.params.idproduct};`);
-                stock.forEach(async (val)=>{
-                    await dbQuery(`update ecommerce.stocks set satuan='${val.satuan}',qty=${val.qty} where idstocks=${val.idstocks};`);
-                });     
+        if(req.dataUser.idrole == 1){
+            try{
+                const uploadFile = uploader('/images','IMGPR').array("images",5);
+                uploadFile(req,res,async(error)=>{
+                    let {idcategory,stock,nama,harga,deskripsi,kemasan,url}=JSON.parse(req.body.data);
+                    console.log('reqfile',req.files)
+                    await dbQuery(`update product set idcategory = ${idcategory}, nama = '${nama}', harga=${harga}, deskripsi='${deskripsi}', kemasan='${kemasan}' where idproduct=${req.params.idproduct};`);
+                    stock.forEach(async (val)=>{
+                        await dbQuery(`update ecommerce.stocks set satuan='${val.satuan}',qty=${val.qty} where idstocks=${val.idstocks};`);
+                    });     
                     if(req.files){
                         req.files.forEach(async (val) => {
-                            await dbQuery(`update  imageproduct set url='http://172.104.62.7:2001/images/${val.filename}' where idproduct=${req.params.idproduct};`);
-                            });
-                        }else{
-                            await dbQuery(`update  imageproduct set url='${url}' where idproduct=${req.params.idproduct};`);
+                            await dbQuery(`update  imageproduct set url='/images/${val.filename}' where idproduct=${req.params.idproduct};`);
+                        });
+                    }else{
+                        await dbQuery(`update  imageproduct set url='${url}' where idproduct=${req.params.idproduct};`);
                     }
-            res.status(200).send({
-                    message : 'Edit Product Success',
+                    res.status(200).send({
+                        message : 'Edit Product Success',
+                        error
+                    })
+                })
+            }catch(error){
+                console.log('error edit product : ', error);
+                res.status(500).send({
+                    message : 'error edit',
+                    success : false,
                     error
                 })
-            })
-        }catch(error){
-            console.log('error edit product : ', error);
-            res.status(500).send({
-                message : 'error edit',
-                success : false,
-                error
-            })
+            }
         }
     }
 }
