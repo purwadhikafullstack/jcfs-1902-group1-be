@@ -10,5 +10,6 @@ router.post("/newpassword", readToken, usersController.newPassword)
 router.get("/keep", readToken, usersController.keepLogin)
 router.get("/verify", readToken, usersController.verification)
 router.patch("/changepass", readToken, usersController.changePass)
+router.patch("/:iduser", readToken, usersController.editProfile)
 
 module.exports = router

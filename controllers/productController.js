@@ -18,7 +18,7 @@ module.exports = {
             let {sort, order} = req.query;
             let getProduct = await dbQuery(`select p.* , i.url as url,c.category as category from product p join imageproduct i on p.idproduct = i.idproduct join category c on p.idcategory=c.idcategory where idstatus = 1 ${filterQuery.length>0? `and ${filterQuery.join(" and ")}`: ''} ${sort&&order? `order by ${sort} ${order}`:''};`);
             console.log('query',getProduct)
-            let getStock = await dbQuery(`select * from stock;`)
+            let getStock = await dbQuery(`select st.*,sa.satuan from stock as st join satuan as sa on st.idsatuan = sa.idsatuan;`)
             getProduct.forEach(valPro=>{
                 valPro.stock = [];
                 getStock.forEach(valStk=>{
@@ -58,7 +58,7 @@ module.exports = {
                                 await dbQuery(`insert into imageproduct values (null,${insertProduct.insertId},'/images/${val.filename}');`);
                             });
                             stock.forEach((val)=>{
-                                inputStock.push(`(null,${insertProduct.insertId},'${val.satuan}',${val.qty});`)
+                                inputStock.push(`(null,${insertProduct.insertId},${val.idsatuan},${val.qty},${val.isnetto})`)
                             });
                             await dbQuery(`insert into stock values ${inputStock.join()};`);
                         }
@@ -105,6 +105,24 @@ module.exports = {
             })
         }
     },
+    getSatuan: async (req,res)=>{
+        try{
+            let getSatuan = await dbQuery(`select * from satuan;`)
+            res.status(200).send({
+                success : true,
+                satuan : getSatuan,
+                message : 'Get Category Success'
+            })
+        }
+        catch (error) {
+            console.log('Get Satuan failed', error)
+            res.status(500).send({
+                success: failed,
+                message : 'Get Satuan error',
+                error
+            })
+        }
+    },
     deleteProduct: async (req,res)=>{
         if(req.dataUser.idrole == 1){
             try{
@@ -133,9 +151,6 @@ module.exports = {
                     let {idcategory,stock,nama,harga,deskripsi,kemasan,url}=JSON.parse(req.body.data);
                     console.log('reqfile',req.files)
                     await dbQuery(`update product set idcategory = ${idcategory}, nama = '${nama}', harga=${harga}, deskripsi='${deskripsi}', kemasan='${kemasan}' where idproduct=${req.params.idproduct};`);
-                    stock.forEach(async (val)=>{
-                        await dbQuery(`update ecommerce.stocks set satuan='${val.satuan}',qty=${val.qty} where idstocks=${val.idstocks};`);
-                    });     
                     if(req.files){
                         req.files.forEach(async (val) => {
                             await dbQuery(`update  imageproduct set url='/images/${val.filename}' where idproduct=${req.params.idproduct};`);
