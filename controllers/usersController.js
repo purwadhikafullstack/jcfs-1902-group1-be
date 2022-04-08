@@ -69,7 +69,7 @@ module.exports = {
     },
     login: (req, res) => {
         let { email, password } = req.body
-        let loginScript = `SELECT * FROM user WHERE email=${db.escape(email)} AND password=${db.escape(hashPassword(password))};`
+        let loginScript = `SELECT u.*, a.address FROM user u JOIN address a ON u.idaddress=a.idaddress WHERE email=${db.escape(email)} AND password=${db.escape(hashPassword(password))};`
         db.query(loginScript, (err, results) => {
             if (err) {
                 console.log(err)
@@ -79,14 +79,14 @@ module.exports = {
                     error: err
                 })
             };
-
+            console.log("LOGIN results = ", results[0])
             if (results.length > 0) {
-                let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image } = results[0]
+                let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = results[0]
                 let token = createToken({ iduser, idrole, idstatus, email, username })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
-                    dataLogin: { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, token }
+                    dataLogin: { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address, token }
                 })
             } else {
                 res.status(401).send({
@@ -98,8 +98,7 @@ module.exports = {
         })
     },
     keepLogin: (req, res) => {
-        console.log("req.dataUser keepLogin ", req.dataUser)
-        let keepLoginScript = `SELECT * FROM user WHERE iduser=${db.escape(req.dataUser.iduser)};`
+        let keepLoginScript = `SELECT u.*, a.address FROM user u JOIN address a ON u.idaddress=a.idaddress WHERE u.iduser=${db.escape(req.dataUser.iduser)};`
         db.query(keepLoginScript, (err, results) => {
             if (err) {
                 res.status(500).send({
@@ -110,12 +109,12 @@ module.exports = {
             };
             console.log("results = ", results[0])
             if (results.length > 0) {
-                let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image } = results[0]
-                let token = createToken({ iduser, username, email, idrole, idstatus })
+                let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = results[0]
+                let token = createToken({ iduser, idrole, idstatus, email, username })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
-                    dataLogin: { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, token },
+                    dataLogin: { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, token, address },
                     error: ""
                 })
             } else {
@@ -475,4 +474,41 @@ module.exports = {
             })
         }
     },
+    checkout: async (req, res) => {
+        try {
+            const uploadFile = uploader('/imagesPBR', 'IMGPBR').array("images", 5);
+            uploadFile(req, res, async (error) => {
+                try {
+                    let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = JSON.parse(req.body.data)
+                    let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "/imagesPBR/${req.files[0].filename}");`)
+                    if (insertTransactionSQL.insertId) {
+                        detail.forEach(async (value) => {
+                            await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
+                        })
+                    }
+                    await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser}`)
+                    console.log("insertTransaction", insertTransactionSQL)
+                    res.status(200).send({
+                        success: true,
+                        message: "Add Transaction Success"
+                    })
+                } catch (error) {
+                    console.log('checkout error 1', error);
+                    res.status(500).send({
+                        success: false,
+                        message: 'failed',
+                        error
+                    })
+                }
+            })
+        } catch (error) {
+            console.log('checkout error', error);
+            res.status(500).send({
+                success: false,
+                message: 'failed',
+                error
+            })
+
+        }
+    }
 }

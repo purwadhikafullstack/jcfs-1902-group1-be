@@ -3,6 +3,7 @@ const { usersController } = require('../controllers')
 const { readToken } = require('../supports/jwt')
 
 router.get("/", usersController.getData)
+
 router.get("/getaddress", readToken, usersController.getAddress)
 router.post("/regis", usersController.register)
 router.post("/login", usersController.login)
@@ -18,9 +19,10 @@ router.patch("/address/:id", readToken, usersController.chooseAddress)
 router.post("/addtocart", readToken, usersController.addToCart)
 router.get("/getcart", readToken, usersController.getCart)
 router.patch("/cart/:id", usersController.deleteCart)
-// OPSI LAIN
+
 router.patch("/pluscart/:id", usersController.plusQtyCart)
 router.patch("/minuscart/:id", usersController.minusQtyCart)
-// OPSI LAIN
+
+router.post("/checkout", usersController.checkout)
 
 module.exports = router
