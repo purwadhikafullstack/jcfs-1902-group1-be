@@ -296,7 +296,6 @@ module.exports = {
     },
     getAddress: async (req, res) => {
         try {
-            console.log("req.dataUser getAddress ", req.dataUser)
             let getAddress = await dbQuery(`SELECT * FROM address WHERE iduser=${db.escape(req.dataUser.iduser)};`)
             res.status(200).send({
                 success: true,
@@ -348,5 +347,132 @@ module.exports = {
                 error
             })
         }
-    }
+    },
+    addToCart: async (req, res) => {
+        console.log("req.body addToCart", req.body)
+        try {
+            let { iduser, idproduct, idstock, qty, qtyStock, qtyTotal, idstockTotal } = req.body
+            let insertSQL = `INSERT INTO cart (idcart, iduser, idproduct, idstock, qty) VALUES
+                (null,
+                ${iduser},
+                ${idproduct},
+                ${idstock},
+                ${qty});`
+            console.log("addToCart insertSQL", insertSQL)
+            await dbQuery(insertSQL)
+            await dbQuery(`UPDATE stock SET qty = ${qtyStock} WHERE idstock=${idstock}`)
+            await dbQuery(`UPDATE stock SET qty = ${qtyTotal} WHERE idstock=${idstockTotal}`)
+            res.status(200).send({
+                success: true,
+                message: "Add To Cart Success ✅",
+                error: ""
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Add To Cart Failed ❌",
+                err: ''
+            })
+        }
+    },
+    getCart: async (req, res) => {
+        try {
+            let getCart = await dbQuery(`SELECT c.*,p.*, i.url  FROM cart c JOIN product p ON c.idproduct=p.idproduct JOIN imageproduct i ON c.idproduct=i.idproduct WHERE c.iduser=${req.dataUser.iduser}`)
+            let getStock = await dbQuery(`SELECT s.*, c.* FROM stock s JOIN cart c ON s.idproduct=c.idproduct WHERE c.iduser=${req.dataUser.iduser}`)
+            getCart.forEach(async (value, index) => {
+                value.stock = []
+                getStock.forEach((val, idx) => {
+                    if (value.idcart == val.idcart) {
+                        value.stock.push(val)
+                    }
+                })
+                // console.log("getCart", getCart)
+            })
+            // console.log("getStock", getStock)
+            res.status(200).send({
+                success: true,
+                cart: getCart,
+                message: 'Get Cart Success'
+            });
+            // console.log("getCart", getCart)
+        } catch (error) {
+            console.log('Get Cart failed', error)
+            res.status(500).send({
+                success: failed,
+                message: 'Get Cart error',
+                error
+            });
+        }
+    },
+    deleteCart: async (req, res) => {
+        try {
+            console.log("req.body deleteCart", req.body)
+            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
+            console.log("getStock", getStock[0].qty)
+            console.log("dari frontEnd", req.body.qty)
+            console.log("hasil akhir", getStock[0].qty + req.body.qty)
+            console.log("UPDATE stock where", req.body.idstock)
+            // 
+            console.log("getStock", getStock[2].qty)
+            console.log("dari frontEnd", req.body.qty)
+            console.log("hasil akhir", getStock[2].qty + (req.body.qty * getStock[1].qty))
+            console.log("UPDATE stock where", req.body.idstock)
+            await dbQuery(`DELETE FROM cart WHERE idcart=${req.params.id}`)
+            await dbQuery(`UPDATE stock SET qty=${getStock[0].qty + req.body.qty} WHERE idstock=${req.body.idstock}`)
+            await dbQuery(`UPDATE stock SET qty=${getStock[2].qty + (req.body.qty * getStock[1].qty)} WHERE idstock=${req.body.idstock + 2}`)
+            res.status(200).send({
+                success: true,
+                message: "Delete cart success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Delete Cart Failed❌",
+                error
+            })
+        }
+    },
+    plusQtyCart: async (req, res) => {
+        try {
+            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
+            await dbQuery(`UPDATE cart SET qty=qty+1 WHERE idcart=${req.params.id};`)
+            await dbQuery(`UPDATE stock SET qty=qty-1 WHERE idstock=${req.body.idstock}`)
+            await dbQuery(`UPDATE stock set qty=qty-${getStock[1].qty} WHERE idstock=${req.body.idstock + 2}`)
+            res.status(200).send({
+                success: true,
+                message: "Update cart success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Failed❌",
+                error
+            })
+        }
+    },
+    minusQtyCart: async (req, res) => {
+        try {
+            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
+            await dbQuery(`UPDATE cart SET qty=qty-1 WHERE idcart=${req.params.id};`)
+            await dbQuery(`UPDATE stock SET qty=qty+1 WHERE idstock=${req.body.idstock}`)
+            await dbQuery(`UPDATE stock set qty=qty+${getStock[1].qty} WHERE idstock=${req.body.idstock + 2}`)
+            res.status(200).send({
+                success: true,
+                message: "Update cart success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Failed❌",
+                error
+            })
+        }
+    },
 }
