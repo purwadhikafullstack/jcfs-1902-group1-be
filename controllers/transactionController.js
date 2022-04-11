@@ -36,5 +36,33 @@ module.exports={
                 error
             })
         }
+    },
+    getTransaction : async (req,res)=>{
+        try{
+            let {iduser,idrole} = req.dataUser;
+            let dataTransaction = await dbQuery(`SELECT t.*,u.username ,a.address as address, s.status FROM transaction t join user u on t.iduser=u.iduser join status s on t.idstatus=s.idstatus join address a on t.idaddress = a.idaddress ${idrole == 2 ? `where t.iduser = ${iduser}` : ''};`);
+            let dataDetail = await dbQuery(`select d.*,p.nama,p.harga as harga_persatuan,i.url from detailtransaction d join product p on d.idproduct = p.idproduct join imageproduct i on p.idproduct = i.idproduct;`)
+            dataTransaction.forEach((val)=>{
+                val.detail = [];
+                dataDetail.forEach((value)=>{
+                    if(val.idtransaction == value.idtransaction){
+                        val.detail.push(value);
+                    }
+                })
+            })
+            res.status(200).send({
+                message : "data transaction success",
+                success : true,
+                dataTransaksi : dataTransaction
+            })
+        }
+        catch (error){
+            console.log(error);
+            res.status(500).send({
+                message : "error get transaction",
+                success : false,
+                error
+            })
+        }
     }
 }

@@ -17,10 +17,11 @@ module.exports = {
     register: async (req, res) => {
         try {
             let { idrole, idstatus, email, username, password, phone, profile_image } = req.body
-            let insertSQL = `INSERT INTO user (iduser, idrole, idstatus, email, username, password, phone, profile_image) VALUES
+            let insertSQL = `INSERT INTO user (iduser, idrole, idstatus, idaddress, email, username, password, phone, profile_image) VALUES
                 (null,
                 ${idrole},
                 ${idstatus},
+                0,
                 ${db.escape(email)},
                 ${db.escape(username)},
                 ${db.escape(hashPassword(password))},
@@ -43,7 +44,7 @@ module.exports = {
                     let token = createToken({ iduser, username, email, role, status })
                     await transporter.sendMail({
                         from: "Admin Pharma",
-                        to: "reyhanbalthazarepsa@gmail.com",
+                        to: `${email}`,
                         subject: "Confirm Registration",
                         html: `<div>
                         <h3>Klik Link dibawah ini untuk verifikasi akun anda</h3>
@@ -68,7 +69,7 @@ module.exports = {
     },
     login: (req, res) => {
         let { email, password } = req.body
-        let loginScript = `SELECT * FROM user WHERE email=${db.escape(email)} AND password=${db.escape(hashPassword(password))};`
+        let loginScript = `SELECT u.*, a.address FROM user u JOIN address a ON u.idaddress=a.idaddress WHERE email=${db.escape(email)} AND password=${db.escape(hashPassword(password))};`
         db.query(loginScript, (err, results) => {
             if (err) {
                 console.log(err)
@@ -78,14 +79,14 @@ module.exports = {
                     error: err
                 })
             };
-
+            console.log("LOGIN results = ", results[0])
             if (results.length > 0) {
-                let { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image } = results[0]
+                let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = results[0]
                 let token = createToken({ iduser, idrole, idstatus, email, username })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
-                    dataLogin: { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image, token }
+                    dataLogin: { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address, token }
                 })
             } else {
                 res.status(401).send({
@@ -97,8 +98,7 @@ module.exports = {
         })
     },
     keepLogin: (req, res) => {
-        console.log("req.dataUser keepLogin ", req.dataUser)
-        let keepLoginScript = `SELECT * FROM user WHERE iduser=${db.escape(req.dataUser.iduser)};`
+        let keepLoginScript = `SELECT u.*, a.address FROM user u JOIN address a ON u.idaddress=a.idaddress WHERE u.iduser=${db.escape(req.dataUser.iduser)};`
         db.query(keepLoginScript, (err, results) => {
             if (err) {
                 res.status(500).send({
@@ -109,12 +109,12 @@ module.exports = {
             };
             console.log("results = ", results[0])
             if (results.length > 0) {
-                let { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image } = results[0]
-                let token = createToken({ iduser, username, email, idrole, idstatus })
+                let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = results[0]
+                let token = createToken({ iduser, idrole, idstatus, email, username })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
-                    dataLogin: { iduser, idrole, idstatus, email, username, fullname, password, age, gender, phone, address, profile_image, token },
+                    dataLogin: { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, token, address },
                     error: ""
                 })
             } else {
@@ -239,23 +239,22 @@ module.exports = {
             uploadFile(req, res, async (error) => {
                 console.log("file", req.files)
                 console.log("req.body", req.body.dataBaru)
-                let { username, fullname, email, phone, address, gender, age, url } = JSON.parse(req.body.dataBaru)
+                let { username, fullname, email, phone, gender, age, url } = JSON.parse(req.body.dataBaru)
                 let editProfile = await dbQuery(`UPDATE user SET 
                         username = ${db.escape(username)},
                         fullname = ${db.escape(fullname)},
                         email = ${db.escape(email)},
                         phone = ${db.escape(phone)},
-                        address = ${db.escape(address)},
+                        
                         gender = ${db.escape(gender)},
                         age = ${db.escape(age)},
-                        profile_image = ${
-                            req.files[0] ?
-                            db.escape(`/imgUser/${req.files[0].filename}`)
-                            :
-                            db.escape(url)
-                        }
+                        profile_image = ${req.files[0] ?
+                        db.escape(`/imgUser/${req.files[0].filename}`)
+                        :
+                        db.escape(url)
+                    }
                         WHERE iduser = ${req.params.iduser};`)
-                        console.log("editProfile = ", editProfile)
+                console.log("editProfile = ", editProfile)
                 res.status(200).send({
                     success: true,
                     message: "edit success ✅"
@@ -268,6 +267,248 @@ module.exports = {
                 message: "Failed ❌",
                 error: error
             })
+        }
+    },
+    newAddress: async (req, res) => {
+        try {
+            console.log("req.body", req.body)
+            let { iduser, address } = req.body
+            let insertSQL = `INSERT INTO address (idaddress, iduser, address) VALUES
+                (null,
+                ${iduser},
+                ${db.escape(address)});`
+            console.log(insertSQL)
+            await dbQuery(insertSQL)
+            res.status(200).send({
+                success: true,
+                message: "Add New Address Success ✅",
+                error: ""
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Insert New Address Failed ❌",
+                err: ''
+            })
+        }
+    },
+    getAddress: async (req, res) => {
+        try {
+            let getAddress = await dbQuery(`SELECT * FROM address WHERE iduser=${db.escape(req.dataUser.iduser)};`)
+            res.status(200).send({
+                success: true,
+                address: getAddress,
+                message: 'Get Address Success'
+            });
+        } catch (error) {
+            console.log('Get Address failed', error)
+            res.status(500).send({
+                success: failed,
+                message: 'Get Address error',
+                error
+            });
+        }
+    },
+    deleteAddress: async (req, res) => {
+        try {
+            await dbQuery(`DELETE FROM address WHERE idaddress=${req.params.id}`)
+            res.status(200).send({
+                success: true,
+                message: "Delete Address success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Delete Address Failed❌",
+                error
+            })
+        }
+    },
+    chooseAddress: async (req, res) => {
+        try {
+            console.log("req.body chooseAddress", req.body)
+            console.log("req.params", req.params)
+            let { idaddress } = req.body
+            await dbQuery(`UPDATE user SET idaddress = ${db.escape(idaddress)} WHERE iduser = ${req.params.id};`)
+            res.status(200).send({
+                success: true,
+                message: "Choose Address success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Choose Address Failed❌",
+                error
+            })
+        }
+    },
+    addToCart: async (req, res) => {
+        console.log("req.body addToCart", req.body)
+        try {
+            let { iduser, idproduct, idstock, qty, qtyStock, qtyTotal, idstockTotal } = req.body
+            let insertSQL = `INSERT INTO cart (idcart, iduser, idproduct, idstock, qty) VALUES
+                (null,
+                ${iduser},
+                ${idproduct},
+                ${idstock},
+                ${qty});`
+            console.log("addToCart insertSQL", insertSQL)
+            await dbQuery(insertSQL)
+            await dbQuery(`UPDATE stock SET qty = ${qtyStock} WHERE idstock=${idstock}`)
+            await dbQuery(`UPDATE stock SET qty = ${qtyTotal} WHERE idstock=${idstockTotal}`)
+            res.status(200).send({
+                success: true,
+                message: "Add To Cart Success ✅",
+                error: ""
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Add To Cart Failed ❌",
+                err: ''
+            })
+        }
+    },
+    getCart: async (req, res) => {
+        try {
+            let getCart = await dbQuery(`SELECT c.*,p.*, i.url  FROM cart c JOIN product p ON c.idproduct=p.idproduct JOIN imageproduct i ON c.idproduct=i.idproduct WHERE c.iduser=${req.dataUser.iduser}`)
+            let getStock = await dbQuery(`SELECT s.*, c.* FROM stock s JOIN cart c ON s.idproduct=c.idproduct WHERE c.iduser=${req.dataUser.iduser}`)
+            getCart.forEach(async (value, index) => {
+                value.stock = []
+                getStock.forEach((val, idx) => {
+                    if (value.idcart == val.idcart) {
+                        value.stock.push(val)
+                    }
+                })
+                // console.log("getCart", getCart)
+            })
+            // console.log("getStock", getStock)
+            res.status(200).send({
+                success: true,
+                cart: getCart,
+                message: 'Get Cart Success'
+            });
+            // console.log("getCart", getCart)
+        } catch (error) {
+            console.log('Get Cart failed', error)
+            res.status(500).send({
+                success: failed,
+                message: 'Get Cart error',
+                error
+            });
+        }
+    },
+    deleteCart: async (req, res) => {
+        try {
+            console.log("req.body deleteCart", req.body)
+            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
+            console.log("getStock", getStock[0].qty)
+            console.log("dari frontEnd", req.body.qty)
+            console.log("hasil akhir", getStock[0].qty + req.body.qty)
+            console.log("UPDATE stock where", req.body.idstock)
+            // 
+            console.log("getStock", getStock[2].qty)
+            console.log("dari frontEnd", req.body.qty)
+            console.log("hasil akhir", getStock[2].qty + (req.body.qty * getStock[1].qty))
+            console.log("UPDATE stock where", req.body.idstock)
+            await dbQuery(`DELETE FROM cart WHERE idcart=${req.params.id}`)
+            await dbQuery(`UPDATE stock SET qty=${getStock[0].qty + req.body.qty} WHERE idstock=${req.body.idstock}`)
+            await dbQuery(`UPDATE stock SET qty=${getStock[2].qty + (req.body.qty * getStock[1].qty)} WHERE idstock=${req.body.idstock + 2}`)
+            res.status(200).send({
+                success: true,
+                message: "Delete cart success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Delete Cart Failed❌",
+                error
+            })
+        }
+    },
+    plusQtyCart: async (req, res) => {
+        try {
+            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
+            await dbQuery(`UPDATE cart SET qty=qty+1 WHERE idcart=${req.params.id};`)
+            await dbQuery(`UPDATE stock SET qty=qty-1 WHERE idstock=${req.body.idstock}`)
+            await dbQuery(`UPDATE stock set qty=qty-${getStock[1].qty} WHERE idstock=${req.body.idstock + 2}`)
+            res.status(200).send({
+                success: true,
+                message: "Update cart success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Failed❌",
+                error
+            })
+        }
+    },
+    minusQtyCart: async (req, res) => {
+        try {
+            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
+            await dbQuery(`UPDATE cart SET qty=qty-1 WHERE idcart=${req.params.id};`)
+            await dbQuery(`UPDATE stock SET qty=qty+1 WHERE idstock=${req.body.idstock}`)
+            await dbQuery(`UPDATE stock set qty=qty+${getStock[1].qty} WHERE idstock=${req.body.idstock + 2}`)
+            res.status(200).send({
+                success: true,
+                message: "Update cart success ✅",
+                error: ''
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                message: "Failed❌",
+                error
+            })
+        }
+    },
+    checkout: async (req, res) => {
+        try {
+            const uploadFile = uploader('/imagesPBR', 'IMGPBR').array("images", 5);
+            uploadFile(req, res, async (error) => {
+                try {
+                    let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = JSON.parse(req.body.data)
+                    let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "/imagesPBR/${req.files[0].filename}");`)
+                    if (insertTransactionSQL.insertId) {
+                        detail.forEach(async (value) => {
+                            await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
+                        })
+                    }
+                    await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser}`)
+                    console.log("insertTransaction", insertTransactionSQL)
+                    res.status(200).send({
+                        success: true,
+                        message: "Add Transaction Success"
+                    })
+                } catch (error) {
+                    console.log('checkout error 1', error);
+                    res.status(500).send({
+                        success: false,
+                        message: 'failed',
+                        error
+                    })
+                }
+            })
+        } catch (error) {
+            console.log('checkout error', error);
+            res.status(500).send({
+                success: false,
+                message: 'failed',
+                error
+            })
+
         }
     }
 }
