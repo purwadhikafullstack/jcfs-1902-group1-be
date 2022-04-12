@@ -40,7 +40,10 @@ module.exports={
     getTransaction : async (req,res)=>{
         try{
             let {iduser,idrole} = req.dataUser;
-            let dataTransaction = await dbQuery(`SELECT t.*,u.username ,a.address as address, s.status FROM transaction t join user u on t.iduser=u.iduser join status s on t.idstatus=s.idstatus join address a on t.idaddress = a.idaddress ${idrole == 2 ? `where t.iduser = ${iduser}` : ''};`);
+
+            let {idstatus} = req.query;
+            let dataTransaction = await dbQuery(`SELECT t.*,u.username ,a.address as address, s.status FROM transaction t join user u on t.iduser=u.iduser join status s on t.idstatus=s.idstatus join address a on t.idaddress = a.idaddress ${idrole == 2 ? `where t.iduser = ${iduser}` : ''} ${idstatus == 6 ? `and t.idstatus = 6` : `and t.idstatus = 3 or t.idstatus = 4 or t.idstatus = 5` };`);
+
             let dataDetail = await dbQuery(`select d.*,p.nama,p.harga as harga_persatuan,i.url from detailtransaction d join product p on d.idproduct = p.idproduct join imageproduct i on p.idproduct = i.idproduct;`)
             dataTransaction.forEach((val)=>{
                 val.detail = [];
@@ -61,6 +64,38 @@ module.exports={
             res.status(500).send({
                 message : "error get transaction",
                 success : false,
+                error
+            })
+        }
+    },
+    getTransactionAdmin : async (req,res)=>{
+        try{
+            let filterQuery = [];
+            for(let prop in req.query){
+                filterQuery.push(`${prop == 'username' || prop == 'invoice' ? `${prop} like '%${req.query[prop]}%'` : prop=='idstatus' ? `t.idstatus=${req.query[prop]}`:`${prop}=${db.escape(req.query[prop])}`}`);
+            }
+            let dataTransaction = await dbQuery(`SELECT t.*,u.username ,a.address as address, s.status FROM transaction t join user u on t.iduser=u.iduser join status s on t.idstatus=s.idstatus join address a on t.idaddress = a.idaddress ${filterQuery.length>0? `where ${filterQuery.join(" and ")}`: ''};`);
+            let dataDetail = await dbQuery(`select d.*,p.nama,p.harga as harga_persatuan,i.url from detailtransaction d join product p on d.idproduct = p.idproduct join imageproduct i on p.idproduct = i.idproduct;`)
+            dataTransaction.forEach((val)=>{
+                val.detail = [];
+                dataDetail.forEach((value)=>{
+                    if(val.idtransaction == value.idtransaction){
+                        val.detail.push(value);
+                    }
+                })
+            })
+            // console.log('query', dataTransaction);
+            res.status(200).send({
+                message : "data transaction admin success",
+                success : true,
+                dataTransaksiAdmin : dataTransaction
+            })
+        }
+        catch (error){
+            console.log('get transaction admin error', error);
+            res.status(500).send({
+                message : 'Get transactions Error',
+                success : failed,
                 error
             })
         }
