@@ -43,7 +43,6 @@ module.exports={
 
             let {idstatus} = req.query;
             let dataTransaction = await dbQuery(`SELECT t.*,u.username ,a.address as address, s.status FROM transaction t join user u on t.iduser=u.iduser join status s on t.idstatus=s.idstatus join address a on t.idaddress = a.idaddress ${idrole == 2 ? `where t.iduser = ${iduser}` : ''} ${idstatus == 6 ? `and t.idstatus = 6` : `and t.idstatus = 3 or t.idstatus = 4 or t.idstatus = 5` };`);
-
             let dataDetail = await dbQuery(`select d.*,p.nama,p.harga as harga_persatuan,i.url from detailtransaction d join product p on d.idproduct = p.idproduct join imageproduct i on p.idproduct = i.idproduct;`)
             dataTransaction.forEach((val)=>{
                 val.detail = [];
@@ -96,6 +95,22 @@ module.exports={
             res.status(500).send({
                 message : 'Get transactions Error',
                 success : failed,
+                error
+            })
+        }
+    },
+    adminAction: async (req,res)=>{
+        try {
+            await dbQuery(`update transaction set idstatus=${req.body.idstatus} where idtransaction=${req.params.id};`);
+            res.status(200).send({
+                success: true,
+                message : 'admin action success'
+            })
+        } catch (error) {
+            console.log('admin action error', error);
+            res.status(500).send({
+                success : false,
+                message: 'admin action failed',
                 error
             })
         }
