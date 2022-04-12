@@ -21,7 +21,7 @@ module.exports = {
                 (null,
                 ${idrole},
                 ${idstatus},
-                0,
+                1,
                 ${db.escape(email)},
                 ${db.escape(username)},
                 ${db.escape(hashPassword(password))},
