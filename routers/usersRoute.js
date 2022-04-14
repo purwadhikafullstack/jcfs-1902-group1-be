@@ -24,5 +24,7 @@ router.patch("/pluscart/:id", usersController.plusQtyCart)
 router.patch("/minuscart/:id", usersController.minusQtyCart)
 
 router.post("/checkout", usersController.checkout)
+router.patch("/uploadpayment/:id", readToken, usersController.uploadPayment)
+
 
 module.exports = router

@@ -3,6 +3,8 @@ const { hashPassword, createToken } = require('../supports/jwt');
 const { transporter } = require('../supports/nodemailer');
 const { uploader } = require('../supports/uploader');
 
+
+
 module.exports = {
     getData: (req, res, next) => {
         dbQuery(`SELECT * FROM user`,
@@ -480,7 +482,7 @@ module.exports = {
             uploadFile(req, res, async (error) => {
                 try {
                     let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = JSON.parse(req.body.data)
-                    let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "/imagesPBR/${req.files[0].filename}");`)
+                    let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
                     if (insertTransactionSQL.insertId) {
                         detail.forEach(async (value) => {
                             await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
@@ -508,7 +510,35 @@ module.exports = {
                 message: 'failed',
                 error
             })
-
+        }
+    },
+    uploadPayment: async (req, res) => {
+        try {
+            const uploadFile = uploader('/imagesPBR', 'IMGPBR').array("images", 5);
+            uploadFile(req, res, async (error) => {
+                try {
+                    let { idtransaction } = JSON.parse(req.body.dataUpload)
+                    await dbQuery(`UPDATE transaction SET url_payment="/imagesPBR/${req.files[0].filename}" WHERE idtransaction=${idtransaction}`)
+                    res.status(200).send({
+                        success: true,
+                        message: "upload success ✅"
+                    })
+                } catch (error) {
+                    console.log('uploadPayment error 1', error);
+                    res.status(500).send({
+                        success: false,
+                        message: 'failed',
+                        error
+                    })
+                }
+            })
+        } catch (error) {
+            console.log('uploadPayment error', error);
+            res.status(500).send({
+                success: false,
+                message: 'failed',
+                error
+            })
         }
     }
 }
