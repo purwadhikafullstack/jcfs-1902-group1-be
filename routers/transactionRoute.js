@@ -11,6 +11,7 @@ router.post('/uploadresep',transactionController.orderbyresep);
 router.post('/cost', transactionController.getOngkir)
 
 router.post('/addcartresep',transactionController.addToCartResep);
+router.post('/checkoutresep',transactionController.checkoutResep);
 router.patch('/adminaction/:id',transactionController.adminAction);
 router.delete('/deletecartresep/:id', transactionController.deleteCartResep)
 

@@ -8,10 +8,10 @@ module.exports={
             const uploadFile = uploader('/images','IMGPR').array('images',5);
             uploadFile(req,res,async(error)=>{
                 try{
-                    let {iduser,invoice} = JSON.parse(req.body.data);
+                    let {iduser,invoice,date} = JSON.parse(req.body.data);
                     let {filename} = req.files[0];
                     console.log('filename',filename)
-                    await dbQuery(`insert into orderbyresep values (null,${iduser},'/images/${filename}','${invoice}',8);`);
+                    await dbQuery(`insert into orderbyresep values (null,${iduser},'/images/${filename}','${invoice}',8,'${date}');`);
                     res.status(200).send({
                         success: true,
                         message: "upload success",
@@ -42,7 +42,6 @@ module.exports={
             let { iduser, idrole } = req.dataUser;
             let { idstatus } = req.query;
             let dataTransaction = await dbQuery(`SELECT t.*,u.username ,a.address as address, s.status FROM transaction t join user u on t.iduser=u.iduser join status s on t.idstatus=s.idstatus join address a on t.idaddress = a.idaddress ${idrole == 2 ? `where t.iduser = ${iduser}` : ''} ${idstatus == 6 ? `and t.idstatus = 6` : `and not t.idstatus = 6 `};`);
-
             let dataDetail = await dbQuery(`select d.*,p.nama,p.harga as harga_persatuan,i.url from detailtransaction d join product p on d.idproduct = p.idproduct join imageproduct i on p.idproduct = i.idproduct;`)
             dataTransaction.forEach((val) => {
                 val.detail = [];
@@ -141,7 +140,7 @@ module.exports={
         try{
             let {idrole,iduser} = req.dataUser;
             let {idorder} = req.query;
-            let getOrderbyresep = await dbQuery(`SELECT o.*, s.status,u.* from orderbyresep o join status s on o.idstatus=s.idstatus join user u on o.iduser=u.iduser ${idrole==2? `where iduser=${iduser} and o.idstatus=8` : `${idorder?`where idorder=${idorder}`:''}`};`);
+            let getOrderbyresep = await dbQuery(`SELECT o.*, s.status,u.* from orderbyresep o join status s on o.idstatus=s.idstatus join user u on o.iduser=u.iduser ${idrole==2? `where o.iduser=${iduser} and o.idstatus=8` : `${idorder?`where idorder=${idorder}`:''}`};`);
             res.status(200).send({
                 message : 'Get order by resep sukses',
                 success : true,
@@ -159,8 +158,8 @@ module.exports={
     },
     addToCartResep : async (req,res)=>{
         try {
-            let {idorder,iduser,idproduct,qty,idsatuan} = req.body;
-            await dbQuery(`insert into cartresep values (null,${idorder},${iduser},${idproduct},${qty},${idsatuan});`);
+            let {idorder,iduser,idproduct,qty,idsatuan,hargaperproduct} = req.body;
+            await dbQuery(`insert into cartresep values (null,${idorder},${iduser},${idproduct},${qty},${idsatuan},${hargaperproduct});`);
             res.status(200).send({
                 message : 'add to cartresep berhasil',
                 success : true,
@@ -214,6 +213,31 @@ module.exports={
             res.status(500).send({
                 message:'error delete cart',
                 success : false
+            })
+        }
+    },
+    checkoutResep: async(req,res)=>{
+        try {
+            let { iduser, idaddress, invoice, date, shipping, tax, totalpembayaran, detail,idorder } = req.body
+            console.log(req.body.iduser)
+            let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, 4, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
+            if (insertTransactionSQL.insertId) {
+                detail.forEach(async (value) => {
+                    await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
+                })
+            }
+            await dbQuery(`Update orderbyresep set idstatus = 4 where idorder = ${idorder};`)
+            await dbQuery(`DELETE FROM cartresep WHERE idorder = ${idorder}`)
+            res.status(200).send({
+                success: true,
+                message: "Add Transaction Success"
+            })
+        } catch (error) {
+            console.log('checkout error 1', error);
+            res.status(500).send({
+                success: false,
+                message: 'failed',
+                error
             })
         }
     }
