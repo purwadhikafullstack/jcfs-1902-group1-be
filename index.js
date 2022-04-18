@@ -29,10 +29,11 @@ db.getConnection((err, connection) => {
 
 // Routes API Setup
 
-const { usersRoute, productRoute, transactionRoute} = require('./routers');
+const { usersRoute, productRoute, transactionRoute, rajaOngkirRoute} = require('./routers');
 app.use('/users', usersRoute);
 app.use('/product',productRoute);
 app.use('/transaction',transactionRoute);
+app.use('/rajaongkir', rajaOngkirRoute);
 
 // app.listen(PORT, () => console.log("Your API RUNNING :", PORT));
 https.createServer({

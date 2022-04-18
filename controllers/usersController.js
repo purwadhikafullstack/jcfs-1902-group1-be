@@ -3,6 +3,12 @@ const { hashPassword, createToken } = require('../supports/jwt');
 const { transporter } = require('../supports/nodemailer');
 const { uploader } = require('../supports/uploader');
 
+const { default: axios } = require("axios");
+
+axios.defaults.baseURL = 'https://api.rajaongkir.com/starter'
+axios.defaults.headers.common['key'] = '9a4a643f14f30ea1ec13bee8053eb545'
+axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+
 module.exports = {
     getData: (req, res, next) => {
         dbQuery(`SELECT * FROM user`,
@@ -272,12 +278,28 @@ module.exports = {
     newAddress: async (req, res) => {
         try {
             console.log("req.body", req.body)
-            let { iduser, address } = req.body
-            let insertSQL = `INSERT INTO address (idaddress, iduser, address) VALUES
+            let { iduser, idprovinsi, idkota, idstatus, nama_penerima, address, phone, kecamatan, kode_pos } = req.body
+            let provinsi, kota
+            let getProvinsi = await axios.get(`/province?id=${idprovinsi}`)
+            let getkota = await axios.get(`/city?id=${idkota}&province=${idprovinsi}`)
+            if (getProvinsi && getkota) {
+                provinsi = getProvinsi.data.rajaongkir.results.province
+                kota = getkota.data.rajaongkir.results.city_name
+            }
+            let insertSQL = `INSERT INTO address (idaddress, iduser, idprovinsi, idkota, idstatus, nama_penerima, address, phone, provinsi, kota, kecamatan, kode_pos) VALUES
                 (null,
                 ${iduser},
-                ${db.escape(address)});`
-            console.log(insertSQL)
+                ${idprovinsi},
+                ${idkota},
+                ${idstatus},
+                ${db.escape(nama_penerima)},
+                ${db.escape(address)},
+                ${db.escape(phone)},
+                ${db.escape(provinsi)},
+                ${db.escape(kota)},
+                ${db.escape(kecamatan)},
+                ${db.escape(kode_pos)});`
+            console.log("insertSQL newAddress", insertSQL)
             await dbQuery(insertSQL)
             res.status(200).send({
                 success: true,
@@ -332,7 +354,16 @@ module.exports = {
             console.log("req.body chooseAddress", req.body)
             console.log("req.params", req.params)
             let { idaddress } = req.body
+            // let getAddress = await dbQuery(`SELECT * FROM address WHERE iduser=${db.escape(req.dataUser.iduser)};`)
             await dbQuery(`UPDATE user SET idaddress = ${db.escape(idaddress)} WHERE iduser = ${req.params.id};`)
+            // if (getAddress > 0) {
+            //     getAddress.forEach(async(value)=>{
+            //         await dbQuery(`UPDATE address SET idstatus = 2 WHERE idaddress = ${idaddress}`)
+            //     })
+            //     await dbQuery(`UPDATE address SET idstatus = 1 WHERE idaddress = ${idaddress}`)
+            // } else {
+
+            // }
             res.status(200).send({
                 success: true,
                 message: "Choose Address success ✅",
@@ -480,7 +511,7 @@ module.exports = {
             uploadFile(req, res, async (error) => {
                 try {
                     let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = JSON.parse(req.body.data)
-                    let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "/imagesPBR/${req.files[0].filename}");`)
+                    let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
                     if (insertTransactionSQL.insertId) {
                         detail.forEach(async (value) => {
                             await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
@@ -508,7 +539,35 @@ module.exports = {
                 message: 'failed',
                 error
             })
-
+        }
+    },
+    uploadPayment: async (req, res) => {
+        try {
+            const uploadFile = uploader('/imagesPBR', 'IMGPBR').array("images", 5);
+            uploadFile(req, res, async (error) => {
+                try {
+                    let { idtransaction } = JSON.parse(req.body.dataUpload)
+                    await dbQuery(`UPDATE transaction SET url_payment="/imagesPBR/${req.files[0].filename}" WHERE idtransaction=${idtransaction}`)
+                    res.status(200).send({
+                        success: true,
+                        message: "upload success ✅"
+                    })
+                } catch (error) {
+                    console.log('uploadPayment error 1', error);
+                    res.status(500).send({
+                        success: false,
+                        message: 'failed',
+                        error
+                    })
+                }
+            })
+        } catch (error) {
+            console.log('uploadPayment error', error);
+            res.status(500).send({
+                success: false,
+                message: 'failed',
+                error
+            })
         }
     }
 }
