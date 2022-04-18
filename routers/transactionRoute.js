@@ -8,6 +8,7 @@ router.get('/getorderbyresep',readToken,transactionController.getOrderbyresep);
 router.get('/getcartresep',transactionController.getCartResep);
 router.post('/uploadresep',transactionController.orderbyresep);
 router.post('/addcartresep',transactionController.addToCartResep);
+router.post('/checkoutresep',transactionController.checkoutResep);
 router.patch('/adminaction/:id',transactionController.adminAction);
 router.delete('/deletecartresep/:id', transactionController.deleteCartResep)
 
