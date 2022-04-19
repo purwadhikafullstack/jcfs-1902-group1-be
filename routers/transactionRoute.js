@@ -7,6 +7,9 @@ router.get('/getadmin',transactionController.getTransactionAdmin);
 router.get('/getorderbyresep',readToken,transactionController.getOrderbyresep);
 router.get('/getcartresep',transactionController.getCartResep);
 router.post('/uploadresep',transactionController.orderbyresep);
+
+router.post('/cost', transactionController.getOngkir)
+
 router.post('/addcartresep',transactionController.addToCartResep);
 router.post('/checkoutresep',transactionController.checkoutResep);
 router.patch('/adminaction/:id',transactionController.adminAction);
