@@ -177,11 +177,12 @@ module.exports={
     getCartResep : async (req,res)=>{
         try {
             let getCart = await dbQuery(`select c.*,p.*,i.url,s.satuan from cartresep c join product p on c.idproduct=p.idproduct join imageproduct i on c.idproduct = i.idproduct join satuan s on c.idsatuan = s.idsatuan where c.idorder = ${req.query.idorder};`);
-            let getStock = await dbQuery(`SELECT s.*, c.idproduct FROM stock s JOIN cart c ON s.idproduct=c.idproduct;`)
+            let getStock = await dbQuery(`SELECT s.*, c.idproduct,c.idcartresep FROM stock s JOIN cartresep c ON s.idproduct=c.idproduct;`)
+            // console.log('stock',getStock)
             getCart.forEach(async (value, index) => {
                 value.stock = [];
                 getStock.forEach((val, idx) => {
-                    if (value.idcart == val.idcart) {
+                    if (value.idcartresep == val.idcartresep) {
                         value.stock.push(val)
                     }
                 })
@@ -219,13 +220,34 @@ module.exports={
     checkoutResep: async(req,res)=>{
         try {
             let { iduser, idaddress, invoice, date, shipping, tax, totalpembayaran, detail,idorder } = req.body
-            console.log(req.body.iduser)
             let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, 4, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
             if (insertTransactionSQL.insertId) {
                 detail.forEach(async (value) => {
                     await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
                 })
             }
+            let qtyStock;
+            let qtyTotal;
+            // update stock saat checkout by admin
+            detail.forEach(async(val,idx)=>{
+                let {stock}=val;
+                //pengkondisian saat qty stock dengan satuan terkecil (mg)
+                if(val.idsatuan==3 || val.idsatuan==4){
+                    qtyTotal = stock[2].qty-val.qty
+                    await dbQuery(`update stock set qty=${qtyTotal} where idstock=${stock[2].idstock}`)
+                    if(val.qty <= stock[1].qty*10){
+                        qtyStock=stock[0].qty-1
+                    }else{
+                        qtyStock=stock[0].qty-(val.qty/(stock[1].qty*10))
+                    }
+                    await dbQuery(`update stock set qty=${qtyStock} where idstock=${stock[0].idstock}`)
+                }else{
+                    qtyStock=stock[0].qty-val.qty;
+                    qtyTotal = qtyStock*stock[2].qty;
+                    await dbQuery(`update stock set qty=${qtyTotal} where idstock=${stock[2].idstock}`)
+                    await dbQuery(`update stock set qty=${qtyStock} where idstock=${stock[0].idstock}`)
+                }
+            })
             await dbQuery(`Update orderbyresep set idstatus = 4 where idorder = ${idorder};`)
             await dbQuery(`DELETE FROM cartresep WHERE idorder = ${idorder}`)
             res.status(200).send({
