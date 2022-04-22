@@ -243,7 +243,7 @@ module.exports={
                     await dbQuery(`update stock set qty=${qtyStock} where idstock=${stock[0].idstock}`)
                 }else{
                     qtyStock=stock[0].qty-val.qty;
-                    qtyTotal = qtyStock*stock[2].qty;
+                    qtyTotal = qtyStock*stock[2].qty*10;
                     await dbQuery(`update stock set qty=${qtyTotal} where idstock=${stock[2].idstock}`)
                     await dbQuery(`update stock set qty=${qtyStock} where idstock=${stock[0].idstock}`)
                 }
