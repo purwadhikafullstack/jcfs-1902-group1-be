@@ -286,12 +286,11 @@ module.exports = {
                 provinsi = getProvinsi.data.rajaongkir.results.province
                 kota = getkota.data.rajaongkir.results.city_name
             }
-            let insertSQL = `INSERT INTO address (idaddress, iduser, idprovinsi, idkota, idstatus, nama_penerima, address, phone, provinsi, kota, kecamatan, kode_pos) VALUES
+            let insertSQL = `INSERT INTO address (idaddress, iduser, idprovinsi, idkota, nama_penerima, address, phone, provinsi, kota, kecamatan, kode_pos) VALUES
                 (null,
                 ${iduser},
                 ${idprovinsi},
                 ${idkota},
-                ${idstatus},
                 ${db.escape(nama_penerima)},
                 ${db.escape(address)},
                 ${db.escape(phone)},

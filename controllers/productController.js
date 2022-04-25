@@ -172,5 +172,31 @@ module.exports = {
                 })
             }
         }
+    },
+    editStock: async (req,res)=>{
+        try {
+            let {stock,qtyIn}=req.body;
+            let qtyTotal;
+            if(qtyIn>stock[0].qty){
+                qtyTotal = stock[2].qty+(Math.abs((qtyIn-stock[0].qty)*10*stock[1].qty));
+                await dbQuery(`update stock set qty = ${qtyIn} where idstock=${stock[0].idstock}`)
+                await dbQuery(`update stock set qty = ${qtyTotal} where idstock=${stock[2].idstock}`)
+            }else if(qtyIn<stock[0].qty){
+                qtyTotal = stock[2].qty-(Math.abs((qtyIn-stock[0].qty)*10*stock[1].qty));
+                await dbQuery(`update stock set qty = ${qtyIn} where idstock=${stock[0].idstock}`)
+                await dbQuery(`update stock set qty = ${qtyTotal} where idstock=${stock[2].idstock}`)
+            }
+            res.status(200).send({
+                message : 'editStock success',
+                success : true
+            })
+        } catch (error) {
+            console.log('editStock error', error);
+            res.status(500).send({
+                message : 'editStock error',
+                success : false,
+                error
+            })
+        }
     }
 }
