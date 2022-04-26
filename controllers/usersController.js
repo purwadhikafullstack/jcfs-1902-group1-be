@@ -380,7 +380,7 @@ module.exports = {
     addToCart: async (req, res) => {
         console.log("req.body addToCart", req.body)
         try {
-            let { iduser, idproduct, idstock, qty, qtyStock, qtyTotal, idstockTotal } = req.body
+            let { iduser, idproduct, idstock, qty } = req.body
             let insertSQL = `INSERT INTO cart (idcart, iduser, idproduct, idstock, qty) VALUES
                 (null,
                 ${iduser},
@@ -388,9 +388,7 @@ module.exports = {
                 ${idstock},
                 ${qty});`
             console.log("addToCart insertSQL", insertSQL)
-            await dbQuery(insertSQL)
-            await dbQuery(`UPDATE stock SET qty = ${qtyStock} WHERE idstock=${idstock}`)
-            await dbQuery(`UPDATE stock SET qty = ${qtyTotal} WHERE idstock=${idstockTotal}`)
+            await dbQuery(insertSQL);
             res.status(200).send({
                 success: true,
                 message: "Add To Cart Success ✅",
@@ -408,7 +406,7 @@ module.exports = {
     getCart: async (req, res) => {
         try {
             let getCart = await dbQuery(`SELECT c.*,p.*, i.url  FROM cart c JOIN product p ON c.idproduct=p.idproduct JOIN imageproduct i ON c.idproduct=i.idproduct WHERE c.iduser=${req.dataUser.iduser}`)
-            let getStock = await dbQuery(`SELECT s.*, c.* FROM stock s JOIN cart c ON s.idproduct=c.idproduct WHERE c.iduser=${req.dataUser.iduser}`)
+            let getStock = await dbQuery(`SELECT s.*, c.idcart FROM stock s JOIN cart c ON s.idproduct=c.idproduct;`)
             getCart.forEach(async (value, index) => {
                 value.stock = []
                 getStock.forEach((val, idx) => {
@@ -466,10 +464,7 @@ module.exports = {
     },
     plusQtyCart: async (req, res) => {
         try {
-            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
             await dbQuery(`UPDATE cart SET qty=qty+1 WHERE idcart=${req.params.id};`)
-            await dbQuery(`UPDATE stock SET qty=qty-1 WHERE idstock=${req.body.idstock}`)
-            await dbQuery(`UPDATE stock set qty=qty-${getStock[1].qty} WHERE idstock=${req.body.idstock + 2}`)
             res.status(200).send({
                 success: true,
                 message: "Update cart success ✅",
@@ -486,10 +481,7 @@ module.exports = {
     },
     minusQtyCart: async (req, res) => {
         try {
-            let getStock = await dbQuery(`SELECT * FROM stock WHERE idproduct=${req.body.idproduct}`)
             await dbQuery(`UPDATE cart SET qty=qty-1 WHERE idcart=${req.params.id};`)
-            await dbQuery(`UPDATE stock SET qty=qty+1 WHERE idstock=${req.body.idstock}`)
-            await dbQuery(`UPDATE stock set qty=qty+${getStock[1].qty} WHERE idstock=${req.body.idstock + 2}`)
             res.status(200).send({
                 success: true,
                 message: "Update cart success ✅",
@@ -513,10 +505,20 @@ module.exports = {
                     let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
                     if (insertTransactionSQL.insertId) {
                         detail.forEach(async (value) => {
-                            await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
+                            await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`);
+                            await dbQuery(`INSERT INTO outdatalog value (null,${insertTransactionSQL.insertId},${value.idproduct},${value.idstock},${value.qty})`);
                         })
                     }
-                    await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser}`)
+                    let qtyStock;
+                    let qtyTotal;
+                    detail.forEach(async(val,idx)=>{
+                        let {stock}=val;
+                        qtyStock=stock[0].qty-val.qty;
+                        qtyTotal = qtyStock*stock[1].qty*10;
+                        await dbQuery(`update stock set qty=${qtyStock} where idstock=${stock[0].idstock};`)
+                        await dbQuery(`update stock set qty=${qtyTotal} where idstock=${stock[2].idstock};`)
+                    })
+                    await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser};`)
                     console.log("insertTransaction", insertTransactionSQL)
                     res.status(200).send({
                         success: true,
