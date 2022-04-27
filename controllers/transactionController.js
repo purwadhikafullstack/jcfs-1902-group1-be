@@ -158,8 +158,8 @@ module.exports={
     },
     addToCartResep : async (req,res)=>{
         try {
-            let {idorder,iduser,idproduct,qty,idsatuan,hargaperproduct} = req.body;
-            await dbQuery(`insert into cartresep values (null,${idorder},${iduser},${idproduct},${qty},${idsatuan},${hargaperproduct});`);
+            let {idorder,iduser,idproduct,qty,idsatuan,hargaperproduct,idstock} = req.body;
+            await dbQuery(`insert into cartresep values (null,${idorder},${iduser},${idproduct},${qty},${idsatuan},${hargaperproduct},${idstock});`);
             res.status(200).send({
                 message : 'add to cartresep berhasil',
                 success : true,
@@ -223,7 +223,8 @@ module.exports={
             let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, 4, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
             if (insertTransactionSQL.insertId) {
                 detail.forEach(async (value) => {
-                    await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
+                    await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`);
+                    await dbQuery(`INSERT INTO outdatalog value (null,${insertTransactionSQL.insertId},${value.idproduct},${value.idstock},${value.qty})`);
                 })
             }
             let qtyStock;
