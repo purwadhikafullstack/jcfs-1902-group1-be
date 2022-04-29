@@ -192,7 +192,7 @@ module.exports = {
             console.log("getSQL ", getSQL[0])
             await transporter.sendMail({
                 from: "Admin Pharma",
-                to: "reyhanbalthazarepsa@gmail.com",
+                to: `${email}`,
                 subject: "Reset Password",
                 html: `<div>
                         <h3>Klik Link dibawah ini untuk Reset Password anda</h3>
@@ -286,12 +286,11 @@ module.exports = {
                 provinsi = getProvinsi.data.rajaongkir.results.province
                 kota = getkota.data.rajaongkir.results.city_name
             }
-            let insertSQL = `INSERT INTO address (idaddress, iduser, idprovinsi, idkota, idstatus, nama_penerima, address, phone, provinsi, kota, kecamatan, kode_pos) VALUES
+            let insertSQL = `INSERT INTO address (idaddress, iduser, idprovinsi, idkota, nama_penerima, address, phone, provinsi, kota, kecamatan, kode_pos) VALUES
                 (null,
                 ${iduser},
                 ${idprovinsi},
                 ${idkota},
-                ${idstatus},
                 ${db.escape(nama_penerima)},
                 ${db.escape(address)},
                 ${db.escape(phone)},
@@ -507,31 +506,54 @@ module.exports = {
     },
     checkout: async (req, res) => {
         try {
-            const uploadFile = uploader('/imagesPBR', 'IMGPBR').array("images", 5);
-            uploadFile(req, res, async (error) => {
-                try {
-                    let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = JSON.parse(req.body.data)
-                    let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
-                    if (insertTransactionSQL.insertId) {
-                        detail.forEach(async (value) => {
-                            await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
-                        })
-                    }
-                    await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser}`)
-                    console.log("insertTransaction", insertTransactionSQL)
-                    res.status(200).send({
-                        success: true,
-                        message: "Add Transaction Success"
-                    })
-                } catch (error) {
-                    console.log('checkout error 1', error);
-                    res.status(500).send({
-                        success: false,
-                        message: 'failed',
-                        error
+            try {
+                let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = req.body
+                let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
+                if (insertTransactionSQL.insertId) {
+                    detail.forEach(async (value) => {
+                        await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`)
                     })
                 }
-            })
+                console.log("insertTransaction", insertTransactionSQL)
+                console.log('detail', detail);
+                let getSalesReport = await dbQuery(`SELECT * FROM salesreport;`)
+                let insert = detail
+                console.log("getSalesReport", getSalesReport)
+                if (getSalesReport.length > 0) {
+                    getSalesReport.forEach((value) => {
+                        detail.forEach(async (val, idx) => {
+                            if (value.date === date) {
+                                if (val.idproduct === value.idproduct) {
+                                    console.log('update')
+                                    dbQuery(`UPDATE salesreport SET qty=${value.qty + val.qty}, total=${val.harga * (value.qty + val.qty)} WHERE idsalesreport=${value.idsalesreport};`)
+                                    insert.splice(idx, 1)
+                                }
+                            }
+                        })
+                    })
+                    console.log('insert', insert)
+                    insert.forEach(async (val) => {
+                        await dbQuery(`INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty}, ${val.harga * val.qty}, ${db.escape(date)});`)
+                    })
+                } else {
+                    console.log("3")
+                    detail.forEach(async (val) => {
+                        await dbQuery(`INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty}, ${val.harga * val.qty}, ${db.escape(date)});`)
+                    })
+                }
+                await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser}`)
+                res.status(200).send({
+                    success: true,
+                    message: "Add Transaction Success"
+                })
+            } catch (error) {
+                console.log('checkout error 1', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'failed',
+                    error
+                })
+            }
         } catch (error) {
             console.log('checkout error', error);
             res.status(500).send({
