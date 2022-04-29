@@ -506,7 +506,7 @@ module.exports = {
                     if (insertTransactionSQL.insertId) {
                         detail.forEach(async (value) => {
                             await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`);
-                            await dbQuery(`INSERT INTO outdatalog value (null,${insertTransactionSQL.insertId},${value.idproduct},${value.idstock},${value.qty})`);
+                            await dbQuery(`INSERT INTO outdatalog value (null,${insertTransactionSQL.insertId},${value.idproduct},${value.qty},${value.stock[0].idsatuan})`);
                         })
                     }
                     let qtyStock;

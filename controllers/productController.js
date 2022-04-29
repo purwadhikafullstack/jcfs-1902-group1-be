@@ -50,7 +50,7 @@ module.exports = {
                     try{
                         console.log("reqbody",req.body.data);
                         console.log("reqfile", req.files);
-                        let {idcategory,stock,nama,harga,deskripsi,kemasan}=JSON.parse(req.body.data);
+                        let {idcategory,stock,nama,harga,deskripsi,kemasan,idsatuan,qty}=JSON.parse(req.body.data);
                         let insertProduct = await dbQuery(`INSERT INTO product VALUES(null,${idcategory},1,'${nama}',${harga},'${deskripsi}','${kemasan}');`);
                         if(insertProduct.insertId){
                             let inputStock = [];
@@ -60,6 +60,7 @@ module.exports = {
                             stock.forEach((val)=>{
                                 inputStock.push(`(null,${insertProduct.insertId},${val.idsatuan},${val.qty},${val.isnetto})`)
                             });
+                            await dbQuery(`INSERT INTO indatalog value (null,${insertProduct.insertId},${idsatuan},${qty});`);
                             await dbQuery(`insert into stock values ${inputStock.join()};`);
                         }
                         res.status(200).send({
@@ -175,17 +176,19 @@ module.exports = {
     },
     editStock: async (req,res)=>{
         try {
-            let {stock,qtyIn}=req.body;
+            let {stock,qtyIn,idproduct}=req.body;
             let qtyTotal;
             if(qtyIn>stock[0].qty){
-                qtyTotal = stock[2].qty+(Math.abs((qtyIn-stock[0].qty)*10*stock[1].qty));
+                console.log('msk sini')
+                qtyTotal = stock[2].qty+((Math.abs(qtyIn-stock[0].qty))*10*stock[1].qty);
                 await dbQuery(`update stock set qty = ${qtyIn} where idstock=${stock[0].idstock}`)
                 await dbQuery(`update stock set qty = ${qtyTotal} where idstock=${stock[2].idstock}`)
             }else if(qtyIn<stock[0].qty){
-                qtyTotal = stock[2].qty-(Math.abs((qtyIn-stock[0].qty)*10*stock[1].qty));
+                qtyTotal = stock[2].qty-((Math.abs(qtyIn-stock[0].qty))*10*stock[1].qty);
                 await dbQuery(`update stock set qty = ${qtyIn} where idstock=${stock[0].idstock}`)
                 await dbQuery(`update stock set qty = ${qtyTotal} where idstock=${stock[2].idstock}`)
             }
+            await dbQuery(`INSERT INTO indatalog value (null,${idproduct},${stock[0].idsatuan},${qtyIn-stock[0].qty});`);
             res.status(200).send({
                 message : 'editStock success',
                 success : true
@@ -196,6 +199,42 @@ module.exports = {
                 message : 'editStock error',
                 success : false,
                 error
+            })
+        }
+    },
+    getDataLogIn: async(req,res)=>{
+        try {
+            let dataLogIn = await dbQuery(`select d.*,p.nama,i.url,s.satuan from indatalog d join imageproduct i on d.idproduct = i.idproduct join satuan s on d.idsatuan = s.idsatuan join product p on d.idproduct = p.idproduct order by d.idindatalog desc;`);
+            res.status(200).send({
+                message : 'data Log in berhasil',
+                dataLogIn : dataLogIn,
+                success : true
+
+            })
+        } catch (error) {
+            console.log(error);
+            res.status(500).send({
+                message : 'error get data log in',
+                error :  error,
+                success : false
+            })
+        }
+    },
+    getDataLogOut: async(req,res)=>{
+        try {
+            let dataLogOut = await dbQuery(`select d.*,p.nama,i.url,s.satuan from outdatalog d join imageproduct i on d.idproduct = i.idproduct join satuan s on d.idsatuan = s.idsatuan join product p on d.idproduct = p.idproduct order by d.idoutdatalog desc;`);
+            res.status(200).send({
+                message : 'data Log out berhasil',
+                dataLogOut : dataLogOut,
+                success : true
+
+            })
+        } catch (error) {
+            console.log(error);
+            res.status(500).send({
+                message : 'error get data log out',
+                error :  error,
+                success : false
             })
         }
     }
