@@ -498,12 +498,12 @@ module.exports = {
     },
     checkout: async (req, res) => {
         try {
-            let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = JSON.parse(req.body.data)
+            let { iduser, idaddress, idstatus, invoice, date, shipping, tax, totalpembayaran, detail } = req.body
             let insertTransactionSQL = await dbQuery(`INSERT INTO transaction VALUE (null, ${iduser}, ${idaddress}, ${idstatus}, ${db.escape(invoice)}, ${db.escape(date)}, ${shipping}, ${tax}, ${totalpembayaran}, "0");`)
             if (insertTransactionSQL.insertId) {
                 detail.forEach(async (value) => {
                     await dbQuery(`INSERT INTO detailtransaction VALUE (null, ${insertTransactionSQL.insertId}, ${value.idproduct}, ${value.qty}, ${value.harga * value.qty})`);
-                    await dbQuery(`INSERT INTO outdatalog value (null,${insertTransactionSQL.insertId},${value.idproduct},${value.qty},${value.stock[0].idsatuan})`);
+                    await dbQuery(`INSERT INTO outdatalog value (null,${insertTransactionSQL.insertId},${value.idproduct},${value.qty},${value.stock[0].idsatuan},'${date}','non-resep')`);
                 })
             }
             let qtyStock;
@@ -515,37 +515,39 @@ module.exports = {
                 await dbQuery(`update stock set qty=${qtyStock} where idstock=${stock[0].idstock};`)
                 await dbQuery(`update stock set qty=${qtyTotal} where idstock=${stock[2].idstock};`)
             })
-            await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser};`)
-            console.log("insertTransaction", insertTransactionSQL)
-            res.status(200).send({
-                success: true,
-                message: "Add Transaction Success"
-            })
-            console.log('insert', insert)
-            insert.forEach(async (val) => {
-                await dbQuery(`INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty}, ${val.harga * val.qty}, ${db.escape(date)});`)
-            })
+            let insert = detail;
+            console.log("insert", insert);
+            let getSalesReport = await dbQuery(`SELECT * FROM salesreport;`)
             if (getSalesReport.length > 0) {
                 getSalesReport.forEach((value) => {
                     detail.forEach(async (val, idx) => {
                         if (value.date === date) {
                             if (val.idproduct === value.idproduct) {
-                                console.log('update')
-                                dbQuery(`UPDATE salesreport SET qty=${value.qty + val.qty}, total=${val.harga * (value.qty + val.qty)} WHERE idsalesreport=${value.idsalesreport};`)
-                                insert.splice(idx, 1)
+                                console.log("update");
+                                dbQuery(
+                                    `UPDATE salesreport SET qty=${value.qty + val.qty}, total=${val.harga * (value.qty + val.qty)
+                                    } WHERE idsalesreport=${value.idsalesreport};`
+                                );
+                                insert.splice(idx, 1);
                             }
                         }
-                    })
-                })
-                console.log('insert', insert)
+                    });
+                });
+                console.log("insert", insert);
                 insert.forEach(async (val) => {
-                    await dbQuery(`INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty}, ${val.harga * val.qty}, ${db.escape(date)});`)
-                })
+                    await dbQuery(
+                        `INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty
+                        }, ${val.harga * val.qty}, ${db.escape(date)});`
+                    );
+                });
             } else {
-                console.log("3")
+                console.log("3");
                 detail.forEach(async (val) => {
-                    await dbQuery(`INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty}, ${val.harga * val.qty}, ${db.escape(date)});`)
-                })
+                    await dbQuery(
+                        `INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty
+                        }, ${val.harga * val.qty}, ${db.escape(date)});`
+                    );
+                });
             }
             await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser}`)
             res.status(200).send({
