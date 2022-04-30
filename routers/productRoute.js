@@ -5,8 +5,11 @@ const { readToken } = require('../supports/jwt')
 router.get('/',productController.getProduct);
 router.get('/category',productController.getCategory);
 router.get('/satuan',productController.getSatuan);
+router.get('/datalogmasuk',productController.getDataLogIn);
+router.get('/datalogkeluar',productController.getDataLogOut);
 router.post('/addproduct',readToken, productController.addProduct);
 router.delete('/:id',readToken, productController.deleteProduct);
-router.patch('/:idproduct',readToken, productController.editProduct);
+router.patch('/editproduct/:idproduct',readToken, productController.editProduct);
+router.patch('/editstock', productController.editStock);
 
 module.exports=router;
