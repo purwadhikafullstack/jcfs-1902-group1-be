@@ -192,7 +192,7 @@ module.exports = {
             console.log("getSQL ", getSQL[0])
             await transporter.sendMail({
                 from: "Admin Pharma",
-                to: "reyhanbalthazarepsa@gmail.com",
+                to: `${email}`,
                 subject: "Reset Password",
                 html: `<div>
                         <h3>Klik Link dibawah ini untuk Reset Password anda</h3>
@@ -524,15 +524,29 @@ module.exports = {
                         success: true,
                         message: "Add Transaction Success"
                     })
-                } catch (error) {
-                    console.log('checkout error 1', error);
-                    res.status(500).send({
-                        success: false,
-                        message: 'failed',
-                        error
+                    console.log('insert', insert)
+                    insert.forEach(async (val) => {
+                        await dbQuery(`INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty}, ${val.harga * val.qty}, ${db.escape(date)});`)
+                    })
+                } else {
+                    console.log("3")
+                    detail.forEach(async (val) => {
+                        await dbQuery(`INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty}, ${val.harga * val.qty}, ${db.escape(date)});`)
                     })
                 }
-            })
+                await dbQuery(`DELETE FROM cart WHERE iduser = ${iduser}`)
+                res.status(200).send({
+                    success: true,
+                    message: "Add Transaction Success"
+                })
+            } catch (error) {
+                console.log('checkout error 1', error);
+                res.status(500).send({
+                    success: false,
+                    message: 'failed',
+                    error
+                })
+            }
         } catch (error) {
             console.log('checkout error', error);
             res.status(500).send({

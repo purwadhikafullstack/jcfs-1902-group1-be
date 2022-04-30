@@ -6,6 +6,8 @@ router.get('/gettransaction',readToken,transactionController.getTransaction);
 router.get('/getadmin',transactionController.getTransactionAdmin);
 router.get('/getorderbyresep',readToken,transactionController.getOrderbyresep);
 router.get('/getcartresep',transactionController.getCartResep);
+router.get('/getsalesreport', transactionController.getSalesReport);
+router.get('/getdatesalesreport', transactionController.getDateSalesReport);
 router.post('/uploadresep',transactionController.orderbyresep);
 
 router.post('/cost', transactionController.getOngkir)
