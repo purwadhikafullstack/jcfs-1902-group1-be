@@ -252,6 +252,14 @@ module.exports = {
                 }
             })
             await dbQuery(`Update orderbyresep set idstatus = 4 where idorder = ${idorder};`)
+            // 
+            detail.forEach(async (val) => {
+                await dbQuery(
+                    `INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty
+                    },${val.idsatuan}, ${val.hargaperproduct}, ${db.escape(date)}, "By Resep");`
+                );
+            });
+            // 
             await dbQuery(`DELETE FROM cartresep WHERE idorder = ${idorder}`)
             res.status(200).send({
                 success: true,
@@ -268,7 +276,7 @@ module.exports = {
     },
     getSalesReport: async (req, res) => {
         try {
-            let getSalesReport = await dbQuery(`SELECT s.*, p.nama FROM salesreport s JOIN product p ON s.idproduct=p.idproduct ${req.query.date ? `WHERE date=${req.query.date}` : ""};`)
+            let getSalesReport = await dbQuery(`SELECT s.*, p.nama, sa.satuan FROM salesreport s JOIN product p ON s.idproduct=p.idproduct JOIN satuan sa ON s.idsatuan=sa.idsatuan ${req.query.date ? `WHERE date=${req.query.date}` : ""};`)
             res.status(200).send({
                 message: 'getSalesReport Success',
                 success: true,
@@ -295,6 +303,40 @@ module.exports = {
             console.log('getDateSalesReport error', error);
             res.status(500).send({
                 message: 'getDateSalesReport error',
+                success: failed,
+                error
+            })
+        }
+    },
+    getSalesRevenueMonthly: async (req, res) => {
+        try {
+            let getSalesRevenueMonthly = await dbQuery(`SELECT s.*, p.nama FROM salesreport s JOIN product p ON s.idproduct=p.idproduct ${req.query.month && req.query.year ? `WHERE date LIKE "%${req.query.year}-${req.query.month}%"` : ""};`)
+            res.status(200).send({
+                message: 'getSalesRevenueMonthly Success',
+                success: true,
+                dataSalesRevenueMonthly: getSalesRevenueMonthly
+            })
+        } catch (error) {
+            console.log('getSalesReport error', error);
+            res.status(500).send({
+                message: 'getSalesRevenueMonthly error',
+                success: failed,
+                error
+            })
+        }
+    },
+    getSalesRevenueInterval: async (req, res) => {
+        try {
+            let getSalesRevenueInterval = await dbQuery(`SELECT s.*, p.nama FROM salesreport s JOIN product p ON s.idproduct=p.idproduct ${req.query.startDate && req.query.endDate ? `WHERE date BETWEEN "${req.query.startDate}" AND "${req.query.endDate}"` : ""};`)
+            res.status(200).send({
+                message: 'getSalesRevenueMonthly Success',
+                success: true,
+                dataSalesRevenueInterval: getSalesRevenueInterval
+            })
+        } catch (error) {
+            console.log('getSalesRevenueInterval error', error);
+            res.status(500).send({
+                message: 'getSalesRevenueInterval error',
                 success: failed,
                 error
             })
