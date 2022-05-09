@@ -533,11 +533,10 @@ module.exports = {
                         }
                     });
                 });
-                console.log("insert", insert);
                 insert.forEach(async (val) => {
                     await dbQuery(
                         `INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty
-                        }, ${val.harga * val.qty}, ${db.escape(date)});`
+                        }, ${val.stock[0].idsatuan}, ${val.harga * val.qty}, ${db.escape(date)}, "Non Resep");`
                     );
                 });
             } else {
@@ -545,7 +544,7 @@ module.exports = {
                 detail.forEach(async (val) => {
                     await dbQuery(
                         `INSERT INTO salesreport VALUE (null, ${val.idproduct}, ${val.qty
-                        }, ${val.harga * val.qty}, ${db.escape(date)});`
+                        }, ${val.stock[0].idsatuan}, ${val.harga * val.qty}, ${db.escape(date)}, "Non Resep");`
                     );
                 });
             }

@@ -8,6 +8,8 @@ router.get('/getorderbyresep',readToken,transactionController.getOrderbyresep);
 router.get('/getcartresep',transactionController.getCartResep);
 router.get('/getsalesreport', transactionController.getSalesReport);
 router.get('/getdatesalesreport', transactionController.getDateSalesReport);
+router.get('/getsalesrevenuemonthly', transactionController.getSalesRevenueMonthly)
+router.get('/getsalesrevenueinterval', transactionController.getSalesRevenueInterval)
 router.post('/uploadresep',transactionController.orderbyresep);
 
 router.post('/cost', transactionController.getOngkir)
