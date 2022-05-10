@@ -37,8 +37,8 @@ module.exports = {
             let getSQL = `SELECT * FROM user WHERE email=${db.escape(email)};`
             let checkEmail = await dbQuery(getSQL);
             if (checkEmail.length > 0) {
-                res.status(400).send({
-                    success: true,
+                res.status(200).send({
+                    success: false,
                     message: "Email Exist ⚠",
                     error: ""
                 });
@@ -54,7 +54,7 @@ module.exports = {
                         subject: "Confirm Registration",
                         html: `<div>
                         <h3>Klik Link dibawah ini untuk verifikasi akun anda</h3>
-                        <a href='http://localhost:3000/verification/${token}'>Click, Here</a>
+                        <a href='https://pharma-jcfs1902group1.vercel.app/verification/${token}'>Click, Here</a>
                         </div>`
                     })
                     res.status(200).send({
