@@ -123,6 +123,18 @@ module.exports = {
     adminAction: async (req, res) => {
         try {
             await dbQuery(`update transaction set idstatus=${req.body.idstatus} where idtransaction=${req.params.id};`);
+            if(req.body.idstatus == 3){
+                // let detail = await dbQuery(`select d.*,d.qty as qty_beli p.*,p.harga as harga_persatuan,i.url from detailtransaction d join product p on d.idproduct = p.idproduct join imageproduct i on p.idproduct = i.idproduct  where d.idtransaction = ${req.params.id};`)
+                // let stock = await dbQuery(`select d.iddetailtransaction, s.* from detailtransaction d join stock s on d.idproduct = s.idproduct`)
+                // detail.forEach((val,id)=>{
+                //     val.stock=[]
+                //     stock.forEach((value,idx)=>{
+                //         if(val.idproduct == value.idproduct){
+                //             val
+                //         }
+                //     })
+                // })
+            }
             res.status(200).send({
                 success: true,
                 message: 'admin action success'

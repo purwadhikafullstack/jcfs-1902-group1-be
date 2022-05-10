@@ -50,7 +50,7 @@ module.exports = {
                     try{
                         console.log("reqbody",req.body.data);
                         console.log("reqfile", req.files);
-                        let {idcategory,stock,nama,harga,deskripsi,kemasan,idsatuan,qty}=JSON.parse(req.body.data);
+                        let {idcategory,stock,nama,harga,deskripsi,kemasan,idsatuan,qty,date}=JSON.parse(req.body.data);
                         let insertProduct = await dbQuery(`INSERT INTO product VALUES(null,${idcategory},1,'${nama}',${harga},'${deskripsi}','${kemasan}');`);
                         if(insertProduct.insertId){
                             let inputStock = [];
@@ -60,7 +60,7 @@ module.exports = {
                             stock.forEach((val)=>{
                                 inputStock.push(`(null,${insertProduct.insertId},${val.idsatuan},${val.qty},${val.isnetto})`)
                             });
-                            await dbQuery(`INSERT INTO indatalog value (null,${insertProduct.insertId},${idsatuan},${qty});`);
+                            await dbQuery(`INSERT INTO indatalog value (null,${insertProduct.insertId},${idsatuan},${qty},'${date}','produk baru');`);
                             await dbQuery(`insert into stock values ${inputStock.join()};`);
                         }
                         res.status(200).send({
@@ -176,7 +176,7 @@ module.exports = {
     },
     editStock: async (req,res)=>{
         try {
-            let {stock,qtyIn,idproduct}=req.body;
+            let {stock,qtyIn,idproduct,date}=req.body;
             let qtyTotal;
             if(qtyIn>stock[0].qty){
                 console.log('msk sini')
@@ -188,7 +188,7 @@ module.exports = {
                 await dbQuery(`update stock set qty = ${qtyIn} where idstock=${stock[0].idstock}`)
                 await dbQuery(`update stock set qty = ${qtyTotal} where idstock=${stock[2].idstock}`)
             }
-            await dbQuery(`INSERT INTO indatalog value (null,${idproduct},${stock[0].idsatuan},${qtyIn-stock[0].qty});`);
+            await dbQuery(`INSERT INTO indatalog value (null,${idproduct},${stock[0].idsatuan},${qtyIn-stock[0].qty},'${date}','Edit Stock');`);
             res.status(200).send({
                 message : 'editStock success',
                 success : true
