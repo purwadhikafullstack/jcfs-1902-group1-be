@@ -196,7 +196,7 @@ module.exports = {
                 subject: "Reset Password",
                 html: `<div>
                         <h3>Klik Link dibawah ini untuk Reset Password anda</h3>
-                        <a href='http://localhost:3000/resetpassword/${token}'>Click, Here to Reset Password</a>
+                        <a href='https://pharma-jcfs1902group1.vercel.app/resetpassword/${token}'>Click, Here to Reset Password</a>
                         </div>`
             })
             res.status(200).send({
