@@ -86,7 +86,7 @@ module.exports = {
                 })
             };
             console.log("LOGIN results = ", results[0])
-            if (results.length > 0) {
+            if (results[0].idstatus !== 1 && results.length > 0) {
                 let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = results[0]
                 let token = createToken({ iduser, idrole, idstatus, email, username })
                 res.status(200).send({
@@ -97,10 +97,11 @@ module.exports = {
             } else {
                 res.status(401).send({
                     success: false,
-                    message: "Login Failed ❌",
+                    message: "Login Failed ❌❌",
                     error: ""
                 })
             }
+
         })
     },
     keepLogin: (req, res) => {
@@ -126,7 +127,7 @@ module.exports = {
             } else {
                 res.status(401).send({
                     success: false,
-                    message: "Login Failed ❌",
+                    message: "Login Failed ❌❌❌",
                     dataLogin: {},
                     error: ""
                 })
