@@ -273,6 +273,7 @@ module.exports = {
             });
             // 
             await dbQuery(`DELETE FROM cartresep WHERE idorder = ${idorder}`)
+            await dbQuery(`DELETE FROM orderbyresep WHERE idorder = ${idorder}`)
             res.status(200).send({
                 success: true,
                 message: "Add Transaction Success"
