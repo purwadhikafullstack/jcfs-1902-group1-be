@@ -88,7 +88,7 @@ module.exports = {
             console.log("LOGIN results = ", results[0])
             if (results[0].idstatus !== 1 && results.length > 0) {
                 let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = results[0]
-                let token = createToken({ iduser, idrole, idstatus, email, username })
+                let token = createToken({ iduser, idrole, idstatus, email, username, password })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
@@ -117,7 +117,7 @@ module.exports = {
             console.log("results = ", results[0])
             if (results.length > 0) {
                 let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = results[0]
-                let token = createToken({ iduser, idrole, idstatus, email, username })
+                let token = createToken({ iduser, idrole, idstatus, email, username, password })
                 res.status(200).send({
                     success: true,
                     message: "Login Success ✅",
@@ -163,6 +163,29 @@ module.exports = {
                 success: false,
                 message: "Verify Failed :x:",
                 err: ''
+            })
+        }
+    },
+    confirmOldPassword: async (req, res) => {
+        try {
+            // let confirmScript = await dbQuery(`SELECT u.password FROM user u WHERE email=${db.escape(req.dataUser.email)} AND password=${db.escape(hashPassword(req.body.password))}`)
+            console.log(req.dataUser.password)
+            console.log(req.body.password)
+            if (req.dataUser.password === hashPassword(req.body.password)) {
+                res.status(200).send({
+                    success: true
+                })
+            } else {
+                res.status(200).send({
+                    success: false
+                })
+            }
+        } catch (error) {
+            console.log("confirmoldpassword", error)
+            res.status(500).send({
+                success: false,
+                message: "Confirm Failed ❌❌",
+                error: ""
             })
         }
     },
