@@ -9,7 +9,9 @@ router.get('/getcartresep',transactionController.getCartResep);
 router.get('/getsalesreport', transactionController.getSalesReport);
 router.get('/getdatesalesreport', transactionController.getDateSalesReport);
 router.get('/getsalesrevenuemonthly', transactionController.getSalesRevenueMonthly)
+router.get('/getsalesrevenuemonthlychart', transactionController.getSalesRevenueMonthlyChart)
 router.get('/getsalesrevenueinterval', transactionController.getSalesRevenueInterval)
+router.get('/getsalesrevenueintervalchart', transactionController.getSalesRevenueIntervalChart)
 router.post('/uploadresep',transactionController.orderbyresep);
 
 router.post('/cost', transactionController.getOngkir)

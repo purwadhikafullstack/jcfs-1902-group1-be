@@ -338,6 +338,23 @@ module.exports = {
             })
         }
     },
+    getSalesRevenueMonthlyChart : async(req, res) =>{
+        try {
+            let getSalesRevenueMonthlyChart = await dbQuery(`SELECT date, SUM(total) as total FROM salesreport WHERE date LIKE "%${req.query.year}-${req.query.month}%" GROUP BY date;`)
+            res.status(200).send({
+                message: 'getSalesRevenueMonthlyChart Success',
+                success: true,
+                dataSalesRevenueMonthlyChart: getSalesRevenueMonthlyChart
+            })
+        } catch (error) {
+            console.log('getSalesRevenueMonthlyChart error', error);
+            res.status(500).send({
+                message: 'getSalesRevenueMonthlyChart error',
+                success: failed,
+                error
+            })
+        }
+    },
     getSalesRevenueInterval: async (req, res) => {
         try {
             let getSalesRevenueInterval = await dbQuery(`SELECT s.*, p.nama FROM salesreport s JOIN product p ON s.idproduct=p.idproduct ${req.query.startDate && req.query.endDate ? `WHERE date BETWEEN "${req.query.startDate}" AND "${req.query.endDate}"` : ""};`)
@@ -354,5 +371,23 @@ module.exports = {
                 error
             })
         }
+    },
+    getSalesRevenueIntervalChart : async(req, res)=>{
+        try {
+            let getSalesRevenueIntervalChart = await dbQuery(`SELECT date, sum(total) as total FROM salesreport s JOIN product p ON s.idproduct=p.idproduct ${req.query.startDate && req.query.endDate ? `WHERE date BETWEEN "${req.query.startDate}" AND "${req.query.endDate}" GROUP BY date` : ""};`)
+            res.status(200).send({
+                message: 'getSalesRevenueMonthly Success',
+                success: true,
+                dataSalesRevenueIntervalChart: getSalesRevenueIntervalChart
+            })
+        } catch (error) {
+            console.log('getSalesRevenueIntervalChart error', error);
+            res.status(500).send({
+                message: 'getSalesRevenueIntervalChart error',
+                success: failed,
+                error
+            })
+        }
     }
+    
 }
