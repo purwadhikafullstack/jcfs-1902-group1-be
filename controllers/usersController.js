@@ -46,8 +46,8 @@ module.exports = {
                 let insertUser = await dbQuery(insertSQL);
                 if (insertUser.insertId) {
                     let getUser = await dbQuery(`SELECT * FROM user WHERE iduser=${insertUser.insertId};`)
-                    let { iduser, username, email, role, status } = getUser[0];
-                    let token = createToken({ iduser, username, email, role, status })
+                    let { iduser, username, email, role, status,profile_image } = getUser[0];
+                    let token = createToken({ iduser, username, email, role, status, profile_image })
                     await transporter.sendMail({
                         from: "Admin Pharma",
                         to: `${email}`,
