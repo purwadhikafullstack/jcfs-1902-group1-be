@@ -46,8 +46,8 @@ module.exports = {
                 let insertUser = await dbQuery(insertSQL);
                 if (insertUser.insertId) {
                     let getUser = await dbQuery(`SELECT * FROM user WHERE iduser=${insertUser.insertId};`)
-                    let { iduser, username, email, role, status } = getUser[0];
-                    let token = createToken({ iduser, username, email, role, status })
+                    let { iduser, username, email, role, status,profile_image } = getUser[0];
+                    let token = createToken({ iduser, username, email, role, status, profile_image })
                     await transporter.sendMail({
                         from: "Admin Pharma",
                         to: `${email}`,
@@ -140,8 +140,8 @@ module.exports = {
                 await dbQuery(`UPDATE user SET idstatus=2 WHERE iduser=${db.escape(req.dataUser.iduser)};`);
                 let login = await dbQuery(`SELECT * FROM user WHERE iduser=${db.escape(req.dataUser.iduser)};`);
                 if (login.length > 0) {
-                    let { iduser, username, email, password, role, status } = login[0];
-                    let token = createToken({ iduser, username, email, role, status });
+                    let { iduser, username, email, password, role, status,profile_image } = login[0];
+                    let token = createToken({ iduser, username, email, role, status, profile_image });
                     res.status(200).send({
                         success: true,
                         message: "Login Success ✅",
