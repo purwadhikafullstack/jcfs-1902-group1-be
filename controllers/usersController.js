@@ -145,7 +145,7 @@ module.exports = {
                     res.status(200).send({
                         success: true,
                         message: "Login Success ✅",
-                        dataVerify: { username, email, role, status, token },
+                        dataVerify: { username, email, role, status, token,profile_image },
                         error: ""
                     })
                 }
