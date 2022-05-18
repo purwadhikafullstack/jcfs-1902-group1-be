@@ -140,12 +140,12 @@ module.exports = {
                 await dbQuery(`UPDATE user SET idstatus=2 WHERE iduser=${db.escape(req.dataUser.iduser)};`);
                 let login = await dbQuery(`SELECT * FROM user WHERE iduser=${db.escape(req.dataUser.iduser)};`);
                 if (login.length > 0) {
-                    let { iduser, username, email, password, idrole, status } = login[0];
-                    let token = createToken({ iduser, username, email, idrole, status });
+                    let { iduser, username, email, password, idrole, status, profile_image } = login[0];
+                    let token = createToken({ iduser, username, email, idrole, status, profile_image });
                     res.status(200).send({
                         success: true,
                         message: "Login Success ✅",
-                        dataVerify: { username, email, idrole, status, token },
+                        dataVerify: { username, email, idrole, status, token, profile_image },
                         error: ""
                     })
                 }
