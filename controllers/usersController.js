@@ -54,7 +54,7 @@ module.exports = {
                         subject: "Confirm Registration",
                         html: `<div>
                         <h3>Klik Link dibawah ini untuk verifikasi akun anda</h3>
-                        <a href='https://pharma-jcfs1902group1.vercel.app/verification/${token}'>Click, Here</a>
+                        <a href='http://localhost:3000/verification/${token}'>Click, Here</a>
                         </div>`
                     })
                     res.status(200).send({
@@ -140,12 +140,12 @@ module.exports = {
                 await dbQuery(`UPDATE user SET idstatus=2 WHERE iduser=${db.escape(req.dataUser.iduser)};`);
                 let login = await dbQuery(`SELECT * FROM user WHERE iduser=${db.escape(req.dataUser.iduser)};`);
                 if (login.length > 0) {
-                    let { iduser, username, email, password, idrole, status, profile_image } = login[0];
-                    let token = createToken({ iduser, username, email, idrole, status, profile_image });
+                    let { iduser, idrole, idstatus, idaddress, email, username, fullname, password, age, gender, phone, profile_image, address } = login[0];
+                    let token = createToken({ iduser, username, email, idrole, idstatus, profile_image });
                     res.status(200).send({
                         success: true,
                         message: "Login Success ✅",
-                        dataVerify: { username, email, idrole, status, token, profile_image },
+                        dataVerify: { username, email, idrole, idstatus, token, profile_image, iduser },
                         error: ""
                     })
                 }
